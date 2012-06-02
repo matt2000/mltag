@@ -1,0 +1,109 @@
+<?php
+
+ /**
+ * Implements hook_help().
+ */
+function mltag_help($path, $arg) {
+  $output = '';
+  switch ($path) {
+    case "admin/help#mltag":
+      $output = t('A module to populate Tags for content using Machine Learning Algoithms');
+      break;
+  }
+  return $output;
+}
+/**
+ * Implements hook_menu().
+ */
+function mltag_menu() {
+  $items = array();
+  
+  $items['admin/config/mltag'] = array(
+      'title' => 'MLTag Configuration Center',
+      'description' => 'Settings for MLTag module',
+      'position' =>  'left',
+      'weight' => -100,
+      'page callback' => 'system_admin_menu_block_page',
+      'access arguments' => array('administer site configuration'),
+      'file' => 'system.admin.inc',
+      'file path' => drupal_get_path('module', 'system'),
+  );
+         
+  $items['admin/config/mltag/settings'] = array(
+    'title' => 'MLtag Settings',
+    'description' => 'Change General settings of MLTag',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mltag_general_settings'),
+    'type' => MENU_NORMAL_ITEM,
+    'access arguments' => array('administer site configuration'),  
+  );
+  $items['admin/config/mltag/stopwords'] = array(
+      'title' => 'MLtag Stopwords',
+      'description' => 'Alter StopWords used while parsing',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('mltag_stopwords_settings'),
+      'type' => MENU_NORMAL_ITEM,
+      'access arguments' => array('administer site configuration'),
+  );
+  
+  return $items;
+}
+
+ /**
+ * Implements mltag general settings form().
+ */
+function mltag_general_settings() {
+  
+  $form['algo_type'] = array(
+    '#type' => 'select',
+    '#default_value' => variable_get('algo_type', 1),  
+    '#title' => 'Algorithm',
+    '#options' => array(
+        1 => 'Term Frequency',
+    ),
+    '#description' => 'Choose an algorithm',
+  );
+  $form['initial_vocab'] = array(
+    '#type' => 'textarea',
+    '#default_value' => variable_get('initial_vocab'),
+    '#rows' => 10,
+    '#cols' => 30,
+    '#title' => 'Initial vocabulary',
+    '#description' => 'Comma separated set of initial vocabulary for training',
+  );
+    
+  $node_types = node_type_get_types();
+  foreach($node_types as $node_type) {
+    $types[$node_type->type] = $node_type->name;
+  }
+  
+  $form['mltag_node_types'] = array(
+      '#type' => 'checkboxes',
+      '#default_value' => variable_get('mltag_node_types',array('article')), 
+      '#title' => t('Node Types'),
+      '#options' => $types,
+  );
+  return system_settings_form($form);
+}
+
+function mltag_stopwords_settings() {
+  
+  
+  
+  $form['stopwords_textfield'] = array(
+    '#type' => 'textarea',
+    '#cols' => 30,
+    '#rows' => 10,
+    '#title' => 'Stop Words',
+    '#description' => 'Stop Words removed during parsing of text',
+    '#default_vale' => variable_get('stopwords_textfield'),             
+  );
+  $lang_list = autordf_stopwords('list');
+  $form['autordf_stopwords_list'] = array(
+      '#type' => 'checkboxes',
+      '#title' => t('Import Stopwords'),
+      '#options' => $lang_list,
+      '#default_value' => variable_get('autordf_stopwords_list', array('en')),
+  );
+  return system_settings_form($form);
+}

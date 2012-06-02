@@ -1,1 +1,8 @@
-name= MLTag
+name = MLTag
+description = Generate Tags Automatically Using Machine Learning
+core = 7.x
+files[] = mltag.module
+configure = admin/configure/mltag
+version = "7.x-1.x-dev"
+core = "7.x"
+projecy = "mltag"

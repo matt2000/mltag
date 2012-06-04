@@ -5,4 +5,4 @@ files[] = mltag.module
 configure = admin/configure/mltag
 version = "7.x-1.x-dev"
 core = "7.x"
-projecy = "mltag"
+project = "mltag"

@@ -1,6 +1,6 @@
 <?php
 
- /**
+/**
  * Implements hook_help().
  */
 function mltag_help($path, $arg) {
@@ -12,6 +12,44 @@ function mltag_help($path, $arg) {
   }
   return $output;
 }
+/**
+ * Implementation of hook_form_alter()
+ */
+function mltag_form_alter(&$form, &$form_state, $form_id) {
+  drupal_set_message($form_id);
+}
+/*
+  if ($form_id == 'article_node_form' || $form_id == 'page_node_form') {
+    drupal_set_message('Editing a node');
+    /*$form['sample'] = array(
+      '#type' => 'textfield',
+      '#title' => 'MLTAG',
+      '#description' => 'testing',
+    );         
+      
+    $form['mltag_new'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('MLTag settings'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+      '#group' => 'additional_settings',
+      '#tree' => TRUE,
+      '#weight' => -2,
+      '#attached' => array(
+        /*  'js' => array(
+              'vertical-tabs' => drupal_get_path('module', 'vertical_tabs_example') . '/vertical_tabs_example.js',
+          ), 
+      ),
+      '#attributes' => array('class' => array('mltag-settings')),
+    );
+    $form['mltag_new']['enabled'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Generate tags use Mltag'),
+
+    );
+  }
+}
+*/
 /**
  * Implements hook_menu().
  */
@@ -49,11 +87,12 @@ function mltag_menu() {
   return $items;
 }
 
+
  /**
  * Implements mltag general settings form().
  */
 function mltag_general_settings() {
-  
+  drupal_set_message("HI!");
   $form['algo_type'] = array(
     '#type' => 'select',
     '#default_value' => variable_get('algo_type', 1),  
@@ -85,6 +124,9 @@ function mltag_general_settings() {
   );
   return system_settings_form($form);
 }
+/**
+ * Implementation of hook_form_alter()
+ */
 
 function mltag_stopwords_settings() {
   
@@ -107,3 +149,4 @@ function mltag_stopwords_settings() {
   );
   return system_settings_form($form);
 }
+

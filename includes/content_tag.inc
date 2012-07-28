@@ -4,12 +4,12 @@
  * Stores the main tagging and learning algorithms using switch case construct.
  */
 //number of tags to propose
-define('Tags_Number', 30);
+define('TAGS_NUMBER', 30);
 
 module_load_include('inc', 'mltag', 'includes/tokeniser');
 module_load_include('inc', 'mltag', 'includes/stemming_porter_algo');
 
-function content_tag($content, $algo_type, $tags_count=Tags_Number) {
+function mltag_content_tag($content, $algo_type, $tags_count=TAGS_NUMBER) {
 $output = array();  
   switch ($algo_type) {
     case 1: { //This algo works on term frequency
@@ -34,7 +34,7 @@ $output = array();
       
       /**
        * @todo apply changes from stopwords1.inc to stopwords.inc
-       * fit in macro Tags_number in the algo      
+       * fit in macro TAGS_NUMBER in the algo      
        * @todo take care of tokenization of words like
        * species/subspecies, to-do, he said:hello, hotels/motels
        * at the moment these are taken as a single
@@ -219,8 +219,9 @@ $output = array();
        * 
        * Then the content is also checked with a ranked list of terms (based on normalized chi square
        * values), that has been derived by the process of training the model.
-       * The top ranked terms are added to the 'tags_learn' array and proposed to the user. 
-       * 
+       * The top 10 ranked terms are added to the 'tags_learn' array, along with the explicit tag block and proposed to the user. 
+       *  
+       * @todo- take max limit on the tags from the user
        */
       $token_object = new Tokenizer($content);
       $tokens = $token_object->getTokens();
@@ -256,9 +257,57 @@ $output = array();
       $temp = array_slice(array_keys($temp), 0, 10);
       //merge with the learned tag array
       $tags_learn = array_merge($tags_learn, $temp);
+      
+      //code for combining terms from vocabularies selected in taxonomy module 
+      $taxonomy_terms = array();
+      $taxonomy_terms = mltag_select_terms_from_taxonomy();
+      if(!empty($taxonomy_terms)) {
+        $taxonomy_terms = array_intersect($tokens, $taxonomy_terms);
+        $tags_learn = array_merge($tags_learn, $taxonomy_terms );
+      }     
+      
       return array_unique($tags_learn);
     }//case 3 ends
   
   }//switch ends 
  
 }//function ends
+
+/**
+ * This function returns an array of terms for the vocabularies selected in the configuration
+ * page.
+ */
+function mltag_select_terms_from_taxonomy() {
+  
+  $output = array();
+  if(module_exists('taxonomy')) {
+    if(variable_get('user_vocab_list')) {
+      $user_vocab_list = variable_get('user_vocab_list');
+      $terms = array();
+      foreach ($user_vocab_list as $key => $vid) {
+        if($vid == 0) {
+          break;
+        }
+        //$output .= "$key ---> $vid";
+        if($vid != 0) { //0 is received if no vocabulary is selected in configuration page, else vid is received
+          $query = db_select('taxonomy_term_data', 't');
+          $query
+          ->condition('vid', $vid, '=')
+          ->fields('t', array('tid', 'name'));
+  
+          $result = $query->execute();
+          $record = $result->fetchAll();
+          $num_rows = $result->rowCount();
+          //$output .= $num_rows."<br>";
+          $i = 0;
+          while($i != $num_rows) {
+            $output[] = $record["$i"]->name;
+            $i++;
+          }
+        }
+      }
+    }
+  } //if stmt ends
+  return $output;
+  //drupal_set_message(print_r($output, TRUE));
+}// function ends 

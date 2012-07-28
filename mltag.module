@@ -73,7 +73,7 @@ function mltag_suggest_tags_ajax($form, $form_state) {
   //pass the content to main tagging algorithm
   include_once 'includes/content_tag.inc';
   $output= '<table style= "width : 400px">';
-  $tags = content_tag($content, variable_get('algo_type'), 20);
+  $tags = mltag_content_tag($content, variable_get('algo_type'), 20);
   if (empty($tags)) {
     $output .= t('Content is insufficient to generate Tags using this algorithm. <br>Please choose other algorithm from Settings Page.');
   }
@@ -89,11 +89,13 @@ function mltag_suggest_tags_ajax($form, $form_state) {
   foreach ($tags as $key => $value)
   $output .= t("<tr><td>$key</td><td>$value</td></tr>");
   }
-  $output .= t("</table>");
   
-  //call the 3rd algo that uses the learned model for proposing tags
-  if (variable_get('enable_learning')) {
-    $tags_from_learning = content_tag($content, 3);
+   $output .= "</table>";
+   //call the 3rd algo that uses the learned model for proposing tags
+  
+  if (variable_get('enable_learning') == TRUE) {
+    
+    $tags_from_learning = mltag_content_tag($content, 3);
     $output .= t("<h2>Learned Tags</h2><br>");
     if (!empty($tags_from_learning)) {
       foreach ($tags_from_learning as $key => $value)
@@ -105,6 +107,8 @@ function mltag_suggest_tags_ajax($form, $form_state) {
     }
   } 
   
+  
+ 
   $form['mltag_new']['sample_text']['#markup'] = $output;
   return $form['mltag_new']['sample_text'];
   
@@ -202,15 +206,31 @@ function mltag_general_settings() {
     $status .=' <br /><u><b>Status</u> :</b> Model was last trained on: <b>' . $record->date_created . '</b> </p>';
   }
   else {
-    $status .=' <br /><u><b>Status</u> :</b> Model has not been trained till now. </p>';
+    $status .=' <p><u><b>Status</u> :</b> Model has not been trained till now. </p>';
   }
   $form['mytextcontainer']['status'] = array(
   '#markup' => t($status),
       
   );
+  if(module_exists('taxonomy')) {
+  $vocabulary = array();
+  $vocabulary = taxonomy_get_vocabularies();
+  $checklist_vocab_array = array(); 
+  foreach ($vocabulary as $item) {
+    $checklist_vocab_array[$item->vid] = $item->name;
+  }
   
-  
-      
+  $form['user_vocab_list'] = array(
+      '#type'             => 'checkboxes',
+      '#title'            => t('Add terms to the Trained Model'),
+      '#position'         => 'left' ,
+      '#options'          => $checklist_vocab_array ,
+      '#default_value'    => variable_get('user_vocab_list', FALSE),
+      '#description'      => t('Users can add new terms explicitly to the Trained Model by choosing appropriate Vocabularies from above. These terms will be given higher weightage than those learned during Training'),
+  );
+  }
+
+ /*
   $form['initial_vocab'] = array(
     '#type' => 'textarea',
     '#default_value' => variable_get('initial_vocab'),
@@ -219,7 +239,8 @@ function mltag_general_settings() {
     '#title' => t('Initial vocabulary'),
     '#description' => t('Comma separated set of initial vocabulary for training'),
   );
-    
+   */
+   
   $node_types = node_type_get_types();
   foreach ($node_types as $node_type) {
     $types[$node_type->type] = $node_type->name;
@@ -231,7 +252,51 @@ function mltag_general_settings() {
       '#title' => t('Node Types'),
       '#options' => $types,
   );
+  
+  $output = '';
+  if(module_exists('taxonomy')) {
+    if(variable_get('user_vocab_list')) {
+      $user_vocab_list = variable_get('user_vocab_list');
+      $terms = array();
+      foreach ($user_vocab_list as $key => $vid) {
+        $output .= "$key ---> $vid";
+        if($vid != 0) { //0 is received if no vocabulary is selected in configuration page, else vid is received
+          $query = db_select('taxonomy_term_data', 't');
+          $query
+          ->condition('vid', $vid, '=')
+          ->fields('t', array('tid', 'name'));  
+  
+          $result = $query->execute();
+          $record = $result->fetchAll();
+          $num_rows = $result->rowCount();
+          $output .= $num_rows."<br>";
+          $i = 0;
+          while($i != $num_rows) {
+            $output .= $record["$i"]->name. "<br>";
+            $i++;
+          }
+        }
+      }
+    }
+  } //if stmt ends
+  drupal_set_message(print_r($output, TRUE));
+  
   return system_settings_form($form);
+}
+
+function mltag_taxonomy_get_children_all($tid, $vid = 0, $key = 'tid'){
+  $c = taxonomy_get_children($tid, $vid, $key);
+  $result = array();
+  foreach ($c as $t => $d){
+    $result[$t] = $d;
+    $below = taxonomy_get_children_all($t, $vid, $key);
+    if (!empty($below)) {
+      foreach ($below as $nt => $nd){
+        $result[$nt] = $nd;
+      }
+    }
+  }
+  return $result;
 }
 
 function mltag_train_submit($form, &$form_state) {
@@ -276,9 +341,11 @@ function mltag_train() {
   $record = $result->fetchAll();
   $num_rows_content = $result->rowCount();
   if ($num_rows_content == 0 || $num_rows_content == NULL) {
-    drupal_set_message(t("Error : Since there is no pre-existing content on this website, therefore, the model can not be trained.<br /> Please add some content to the website and try again.", 'error'));
+    drupal_set_message(t('Error : Since there is no pre-existing content on this website, therefore, the model can not be trained.<br /> Please add some content to the website and try again.'), 'error');
   return;
   }
+  
+  //This selects the tags specified explicitly by the user for each node
   $query1 = db_select('taxonomy_index', 't');
   $query1
   ->fields('t', array('nid'))
@@ -300,19 +367,19 @@ function mltag_train() {
   $content = '';
   $content .= $record["$i"]->title;
   $content = $content . ' ' . $record["$i"]->body_value;
-  //call tagging algorithm
-  $tags = content_tag($content, 2, 10);
+  //call tagging algorithm and extract 10 tags for each content. $tags array stores the tags dervied using algo 2 for each content
+  $tags = mltag_content_tag($content, 2, 10);
   //drupal_set_message(print_r($tags,TRUE));
   
   $tags_count = count($tags);
   if ($tags_count < 10) {
-    $diff = 10-$tags_count;
+    $diff = 10 - $tags_count;
     $tags_extra = array();
-    $tags_extra = content_tag($content, 1, $diff);
+    $tags_extra = mltag_content_tag($content, 1, $diff);
     $tags = array_merge($tags, $tags_extra);
   }
   
-    
+  // user_tags stores the explicit tags for content  
   $user_tags = array();
   $temp_count = 0;
   while ($temp_count < $num_rows_tags) {
@@ -370,7 +437,7 @@ function mltag_train() {
     
   } 
   arsort($ranked_tags);
-  
+  //$ranked_tags contains tags ranked using z-score 
   $file = drupal_get_path("module", "mltag") . '/includes/learned_tags.txt';
   file_put_contents($file, urlencode(serialize($ranked_tags)));
   //$content2 = file_get_contents($file);
@@ -400,10 +467,9 @@ function mltag_sd($array) {
   return sqrt(array_sum(array_map("mltag_sd_square", $array, array_fill(0, count($array), (array_sum($array) / count($array)) ) ) ) / (count($array)-1) );
 }
 /**
- * 
  * Function to merge trained vocabulary arrays.
- * If on merge duplicate keys are encountered then the one having the maximum value is chosen
- * in the final merged array
+ * If on merge duplicate keys(tags or words) are encountered then the one having the maximum value( chi value) is chosen
+ * in the final merged array.
  */
 function mltag_merge_array($base, $sec) {
   $numargs = func_num_args();

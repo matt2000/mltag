@@ -253,34 +253,6 @@ function mltag_general_settings() {
       '#options' => $types,
   );
   
-  $output = '';
-  if(module_exists('taxonomy')) {
-    if(variable_get('user_vocab_list')) {
-      $user_vocab_list = variable_get('user_vocab_list');
-      $terms = array();
-      foreach ($user_vocab_list as $key => $vid) {
-        $output .= "$key ---> $vid";
-        if($vid != 0) { //0 is received if no vocabulary is selected in configuration page, else vid is received
-          $query = db_select('taxonomy_term_data', 't');
-          $query
-          ->condition('vid', $vid, '=')
-          ->fields('t', array('tid', 'name'));  
-  
-          $result = $query->execute();
-          $record = $result->fetchAll();
-          $num_rows = $result->rowCount();
-          $output .= $num_rows."<br>";
-          $i = 0;
-          while($i != $num_rows) {
-            $output .= $record["$i"]->name. "<br>";
-            $i++;
-          }
-        }
-      }
-    }
-  } //if stmt ends
-  drupal_set_message(print_r($output, TRUE));
-  
   return system_settings_form($form);
 }
 

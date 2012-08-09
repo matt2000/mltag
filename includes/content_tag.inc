@@ -228,12 +228,15 @@ $output = array();
       $stopwords_object = new Stopwords();
       $tokens = $stopwords_object->remove_stopwords($tokens);
       
-      $result = db_query(" select * from {mltag_learn_tags}");
+      $result = db_query("select * from {mltag_learn_tags}");
       $tags_learn = array();
       
       while ($record = $result->fetchObject()) {
+        if(($record->user_tags) == '' ||($record->user_tags) == NULL )
+          break;
         $user_learned_tags = unserialize($record->user_tags);
         //drupal_set_message(print_r($user_learned_tags, true));
+        
         foreach ($user_learned_tags as $key => $value) {
           if (in_array($key, $tokens)) {
             

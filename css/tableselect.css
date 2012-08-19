@@ -1,3 +1,11 @@
 #mltag_suggest_tags_table_div {
+	clear: both;
 	width: 500px;
+	float : left;
+	margin-top: 10px; 
+	
+}
+
+#edit-mltag-new-tag {
+	float :left;
 }

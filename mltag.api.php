@@ -1,5 +1,12 @@
 <?php 
 /**
+ * @file
+ * Still under development. Will commit this soon
+ * APIs for reusing Learning algorithms
+ */
+
+
+/**
  * Define various algorithms used throughout this project
  */
 function hook_mltag_custom_algorithms() {

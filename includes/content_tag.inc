@@ -232,14 +232,14 @@ $output = array();
       $tags_learn = array();
       
       while ($record = $result->fetchObject()) {
-        if(($record->user_tags) == '' ||($record->user_tags) == NULL )
+        if (($record->user_tags) == '' ||($record->user_tags) == NULL )
           break;
         $user_learned_tags = unserialize($record->user_tags);
         //drupal_set_message(print_r($user_learned_tags, true));
         
         foreach ($user_learned_tags as $key => $value) {
           if (in_array($key, $tokens)) {
-            
+            //drupal_set_message($key);
             $tags_learn = array_merge($tags_learn, array_flip($user_learned_tags));
             break;
           }
@@ -264,12 +264,12 @@ $output = array();
       //code for combining terms from vocabularies selected in taxonomy module 
       $taxonomy_terms = array();
       $taxonomy_terms = mltag_select_terms_from_taxonomy();
-      if(!empty($taxonomy_terms)) {
+      if (!empty($taxonomy_terms)) {
         $taxonomy_terms = array_intersect($tokens, $taxonomy_terms);
         $tags_learn = array_merge($tags_learn, $taxonomy_terms );
       }     
       
-      return array_unique($tags_learn);
+      return array_unique(array_slice($tags_learn, 0 , 20));
     }//case 3 ends
   
   }//switch ends 
@@ -283,16 +283,16 @@ $output = array();
 function mltag_select_terms_from_taxonomy() {
   
   $output = array();
-  if(module_exists('taxonomy')) {
-    if(variable_get('user_vocab_list')) {
+  if (module_exists('taxonomy')) {
+    if (variable_get('user_vocab_list')) {
       $user_vocab_list = variable_get('user_vocab_list');
       $terms = array();
       foreach ($user_vocab_list as $key => $vid) {
-        if($vid == 0) {
+        if ($vid == 0) {
           break;
         }
         //$output .= "$key ---> $vid";
-        if($vid != 0) { //0 is received if no vocabulary is selected in configuration page, else vid is received
+        if ($vid != 0) { //0 is received if no vocabulary is selected in configuration page, else vid is received
           $query = db_select('taxonomy_term_data', 't');
           $query
           ->condition('vid', $vid, '=')
@@ -303,7 +303,7 @@ function mltag_select_terms_from_taxonomy() {
           $num_rows = $result->rowCount();
           //$output .= $num_rows."<br>";
           $i = 0;
-          while($i != $num_rows) {
+          while ($i != $num_rows) {
             $output[] = $record["$i"]->name;
             $i++;
           }

@@ -1,5 +1,5 @@
 name = MLTag
-description = Generate Tags Automatically Using Machine Learning
+description = Generate Tags Automatically Using Learning Algorithms
 core = 7.x
 files[] = mltag.module
 files[] = includes/tokeniser.inc
@@ -7,6 +7,7 @@ files[] = includes/stopwords.inc
 files[] = stopwords/stopwords_en.inc
 files[] = includes/content_tag.inc
 files[] = includes/stemming_porter_algo.inc
+dependencies[] = taxonomy
 configure = admin/configure/mltag
 version = "7.x-1.x-dev"
 core = "7.x"

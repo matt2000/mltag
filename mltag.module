@@ -491,6 +491,7 @@ function mltag_menu() {
     'type' => MENU_NORMAL_ITEM,
     'access arguments' => array('administer site configuration'),  
   );
+  /*
   $items['admin/config/mltag/stopwords'] = array(
       'title' => 'MLtag Stopwords',
       'description' => 'Alter StopWords used while parsing',
@@ -499,6 +500,7 @@ function mltag_menu() {
       'type' => MENU_NORMAL_ITEM,
       'access arguments' => array('administer site configuration'),
   );
+  */
   $items['admin/config/mltag/train'] = array(
       'title' => 'MLTag Train Model',
       'page callback' => 'drupal_get_form',

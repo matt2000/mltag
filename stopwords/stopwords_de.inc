@@ -1,7 +1,7 @@
 <?php
 
 // German Stopwords
-function autordf_stopwords_de() {
+function mltag_stopwords_de() {
   $sp = 'aber, als, auch, auf, aus, bei, bin, bis, bist, dadurch, daher,' .
       ' darum, das, daß, dass, dein, deine, dem, den, der, des, dessen,' .
       ' deshalb, die, dies, dieser, dieses, doch, dort, durch, ein, eine,' .

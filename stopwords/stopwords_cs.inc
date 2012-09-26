@@ -1,7 +1,7 @@
 <?php
 
 // Czech Stopwords
-function autordf_stopwords_cs() {
+function mltag_stopwords_cs() {
   $sp = 'dnes, timto, budes, budem, byli, jses, muj, svym, tomto, tohle,' .
       ' tuto, tyto, jej, zda, proc, mate, tato, kam, tohoto, kdo, kteri, nam,' .
       ' tom, tomuto, mit, nic, proto, kterou, byla, toho, protoze, asi, nasi,' .

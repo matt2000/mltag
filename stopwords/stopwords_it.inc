@@ -1,7 +1,7 @@
 <?php
 
 // Italian Stopwords
-function autordf_stopwords_it(){
+function mltag_stopwords_it(){
   $sp = 'adesso, alla, allo, allora, altre, altri, altro, anche, ancora,' .
       ' avere, aveva, avevano, ben, buono, che, chi, cinque, comprare, con,' .
       ' consecutivi, consecutivo, cosa, cui, del, della, dello, dentro, deve,' .

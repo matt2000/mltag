@@ -35,7 +35,6 @@ function mltag_help($path, $arg) {
  * Implementation of hook_form_alter() for a node
  */
 function mltag_form_alter(&$form, &$form_state, $form_id) {
-  //drupal_set_message(check_plain($form_id));
   $bundles = variable_get('mltag_node_types', array('article'));
   if (isset($form['type']) && $form['type']['#value'] . '_node_form' == $form_id && in_array($form['type']['#value'], $bundles, TRUE)) {
     
@@ -455,7 +454,7 @@ function mltag_custom_create_taxonomy_term($name, $vid) {
  *   This is the vocabulary object with the name
  *   or null if no such vocabulary exists
  */
-function mymodule_get_vocabulary_by_name($vocabulary_name) {
+function mltag_get_vocabulary_by_name($vocabulary_name) {
   $vocabs = taxonomy_get_vocabularies(NULL);
   foreach ($vocabs as $vocab_object) {
     if ($vocab_object->name == $vocabulary_name) {
@@ -797,6 +796,7 @@ function mltag_rank_terms($tags_learned) {
     
   } 
   arsort($ranked_tags);
+  $ranked_tags."\n";
   //$ranked_tags contain tags ranked using z-score 
   $file = drupal_get_path("module", "mltag") . '/includes/learned_tags.txt';
   file_put_contents($file, urlencode(serialize($ranked_tags)));

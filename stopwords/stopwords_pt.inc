@@ -1,7 +1,7 @@
 <?php
 
 // Portuguese Stopwords
-function autordf_stopwords_pt() {
+function mltag_stopwords_pt() {
   $sp = 'último, acerca, agora, algmas, alguns, ali, ambos, antes, apontar,' .
       ' aquela, aquelas, aquele, aqueles, aqui, atrás, bem, bom, cada, caminho,' .
       ' cima, com, como, comprido, conhecido, corrente, das, debaixo, dentro,' .

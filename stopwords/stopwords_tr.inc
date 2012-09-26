@@ -1,7 +1,7 @@
 <?php
 
 // Turkish Stopwords
-function autordf_stopwords_tr() {
+function mltag_stopwords_tr() {
   $sp = 'acaba, altmýþ, altý, ama, bana, bazý, belki, ben, benden, beni,' .
       ' benim, beþ, bin, bir, biri, birkaç, birkez, birþey, birþeyi, biz,' .
       ' bizden, bizi, bizim, buna, bunda, bundan, bunu, bunun, daha, dahi,' .

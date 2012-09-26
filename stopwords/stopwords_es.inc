@@ -1,7 +1,7 @@
 <?php
 
 // Spanish Stopwords
-function autordf_stopwords_es() {
+function mltag_stopwords_es() {
   $sp = 'una, unas, unos, uno, sobre, todo, también, tras, otro, algún,' .
       ' alguno, alguna, algunos, algunas, ser, soy, eres, somos, sois, estoy,' .
       ' esta, estamos, estais, estan, como, para, atras, porque, porué, estado,' .

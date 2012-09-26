@@ -1,7 +1,7 @@
 <?php
 
 // Polish Stopwords
-function autordf_stopwords_pl() {
+function mltag_stopwords_pl() {
   $sp = 'aby, ach, acz, aczkolwiek, albo, ale, ależ, bardziej, bardzo, bez,' .
       ' bowiem, byli, bynajmniej, być, był, była, było, były, będzie, będą,' .
       ' cali, cała, cały, cię, ciebie, cokolwiek, coś, czasami, czasem, czemu,' .

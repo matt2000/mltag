@@ -3,7 +3,8 @@
 /**
  * @file
  * Contains code for Tokenising a given content.
- * It takes $content as input string and has a Word Tokeniser - returns an array of words
+ * It takes $content as input string and has a 
+ * Word Tokeniser - returns an array of words
  * and also a sentence Tokeniser- Returns an array of sentences.
  */
 
@@ -12,14 +13,12 @@ class Tokenizer {
   /**
    * Delimiter value
    */
-  protected $delim;
-  
+  protected $delim;  
   /**
    * Generated tokens for the string
    */
   protected $tokens;
-  
- /**
+  /**
    * Split a text separated by space into array of words
    * 
    * @param string $content
@@ -30,11 +29,11 @@ class Tokenizer {
    */  
   function __construct($string, $delim = ' ') {
     $this->delim = $delim;
-    $string = self::string_clean($string);
+    $string = self::stringClean($string);
     $this->tokens = self::stringTokenizer($string, $delim);
-  }
-  
+  }  
   /**
+   * Return List of generated tokens
    * @return array
    *   List of generated tokens
    */
@@ -46,26 +45,24 @@ class Tokenizer {
    *
    * @param string $string
    *   String to clean
+   *   
    * @return string
    *   Cleaned string
    */
-  public function string_clean($string) {
-    
-    //convert everthing to lowercase
+  public function stringClean($string) {
+    // Convert everthing to lowercase.
     $string = strtolower($string);
-    //remove html tags
+    // Remove html tags.
     $string = strip_tags($string);
-    // for end of line (or begining)
+    // For end of line (or begining).
     $string = trim($string);
-    
-    //remove multiple tabs or spaces from everywhere
+    // Remove multiple tabs or spaces from everywhere.
     $string = preg_replace('/\s\s+/', ' ', $string);
     $string = preg_replace('/[\.]+/', '\.', $string);
     $string = preg_replace('/[\!]+/', '\!', $string);
-    //drupal_set_message($string);
+    // Drupal_set_message($string);
     return $string;
-  }
-  
+  }  
   /**
    * Tokenize a given string.
    * 
@@ -73,14 +70,13 @@ class Tokenizer {
    *   String to tokenize
    * @param char $delim
    *   Delimiter character
+   *   
    * @return array
    *   List of generated tokens
    */
-  public static function stringTokenizer($string, $delim = ' ') {
-       
+  public static function stringTokenizer($string, $delim = ' ') {    
     $words = explode($delim, $string);
-    $tokens = array();
-    
+    $tokens = array();    
     foreach ($words as $word) {
       $word = strtok($word, '\'');
       // If word ends with . and its Not an abbrevation M.S.
@@ -91,9 +87,9 @@ class Tokenizer {
       // If word ends with .
       elseif ($endswith == '.' || $endswith == ',' || $endswith == ';' || $endswith == '?' || $endswith == ':') {
         $word = trim(preg_replace('/[^a-z0-9]/', '', $word));
-        if ($word!='' ||$word != NULL)  
+        if ($word != '' ||$word != NULL)  
         array_push($tokens, $word);
-        //array_push($tokens, '.');  
+        // array_push($tokens, '.');  
       }
       // If word ends with comma ,
       /*
@@ -121,9 +117,8 @@ class Tokenizer {
     }
     return $tokens;
   }
-  
   /**
-   * Return last parts of string
+   * Return last parts of string.
    */
   public static function endsWith($haystack, $len = 1) {
     return substr($haystack, strlen($haystack) - $len, $len);
@@ -138,12 +133,12 @@ class Tokenizer {
  * by common end points of a sentence like - dot, ?, !, ; etc.
  *
  */
-class Tokenize_Sentence {
+class TokenizeSentence {
+  
   /**
    * Delimiter value
    */
   protected $delim;
-
   /**
    * Generated tokens for the string
    */
@@ -163,11 +158,11 @@ class Tokenize_Sentence {
    */
   function __construct($string, $delim = ' ') {
     $this->delim = $delim;
-    $string = self::content_clean($string);
+    $string = self::contentClean($string);
     $this->sentences = self::sentenceTokenizer($string, $delim);
   }
-
   /**
+   * List of generated tokens
    * @return array
    *   List of generated tokens
    */
@@ -182,19 +177,18 @@ class Tokenize_Sentence {
    * @return string
    *   Cleaned string
    */
-  public function content_clean($string) {
-    //convert everthing to lowercase
+  public function contentClean($string) {
+    // Convert everthing to lowercase.
     $string = strtolower($string);
-    //remove html tags
+    // Remove html tags
     $string = strip_tags($string);
-    // for end of line (or begining)
+    // For end of line (or begining).
     $string = trim($string);
 
-    //remove multiple tabs or spaces from everywhere
+    // Remove multiple tabs or spaces from everywhere.
     $string = preg_replace('/\s\s+/', ' ', $string);
     return $string;
   }
-
   /**
    * Tokenize a given string and return the sentences 
    * after combining the tokens together and then exploding them
@@ -208,11 +202,9 @@ class Tokenize_Sentence {
    *   List of generated sentences
    */
   public static function sentenceTokenizer($string, $delim = ' ') {
-     
     $words = explode($delim, $string);
     $tokens = array();
     $sentences = array();
-
     foreach ($words as $word) {
       $word = strtok($word, '\'');
       // If word ends with . and its Not an abbrevation M.S.
@@ -223,20 +215,19 @@ class Tokenize_Sentence {
       // If word ends with .
       elseif ($endswith == '.') {
         $word = trim(preg_replace('/[^a-z0-9]/', '', $word));
-        if ($word !='' ||$word != NULL) {
+        if ($word != '' ||$word != NULL) {
           array_push($tokens, $word);
           array_push($tokens, '.');
-      }
+        }
       }
       elseif ($endswith == ';') {
-      array_push($tokens, substr($word, 0, -1));
-      array_push($tokens, ';');
+        array_push($tokens, substr($word, 0, -1));
+        array_push($tokens, ';');
       }
       elseif ($endswith == '?') {
-      array_push($tokens, substr($word, 0, -1));
-      array_push($tokens, ';');
+        array_push($tokens, substr($word, 0, -1));
+        array_push($tokens, ';');
       }
-      
       elseif ($endswith == '!') {
         array_push($tokens, substr($word, 0, -1));
         array_push($tokens, '!');
@@ -251,12 +242,10 @@ class Tokenize_Sentence {
     $sentences = preg_split('/[\.\;\?\:\!]+/', $content, NULL, PREG_SPLIT_NO_EMPTY);
     return $sentences;
   }
-
   /**
-   * Return last parts of string
+   * Return last parts of string.
    */
   public static function endsWith($haystack, $len = 1) {
     return substr($haystack, strlen($haystack) - $len, $len);
   }
 }
-

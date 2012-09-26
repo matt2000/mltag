@@ -1,7 +1,7 @@
 <?php
 
 // Catalan Stopwords
-function autordf_stopwords_ca() {
+function mltag_stopwords_ca() {
   $sp = 'una, unes, uns, tot, també, altre, algun, alguna, alguns, algunes,' .
       ' ser, soc, ets, som, estic, està, estem, esteu, estan, com, per, perquè,' .
       ' perue, estat, estava, ans, abans, éssent, ambdós, però, per, poder,' .

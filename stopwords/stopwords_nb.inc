@@ -1,7 +1,7 @@
 <?php
 
 // Norwegian Stopwords
-function autordf_stopwords_nb() {
+function mltag_stopwords_nb() {
   $sp = 'alle, andre, arbeid, begge, bort, bra, bruke, denne, der, deres, det,' .
       ' din, disse, eller, ene, eneste, enhver, enn, folk, for, fordi, forsÛke,' .
       ' fra, fÛr, fÛrst, gjorde, gjÛre, god, hadde, han, hans, hennes, her,' .

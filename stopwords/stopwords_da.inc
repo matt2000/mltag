@@ -1,7 +1,7 @@
 <?php
 
 // Danish Stopwords
-function autordf_stopwords_da() {
+function mltag_stopwords_da() {
   $sp = 'alle, andet, andre, begge, den, denne, der, deres, det, dette, dig,' .
       ' din, dog, eller, end, ene, eneste, enhver, fem, fire, flere, fleste,' .
       ' for, fordi, forrige   fra, før, god, han, hans, har, hendes, her, hun,' .

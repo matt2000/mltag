@@ -1,7 +1,7 @@
 <?php
 
 // French Stopwords
-function autordf_stopwords_fr() {
+function mltag_stopwords_fr() {
   $sp = 'alors, aucuns, aussi, autre, avant, avec, avoir, bon, car, cela, ces,' .
       ' ceux, chaque, comme, comment, dans, des, dedans, dehors, depuis, deux,' .
       ' devrait, doit, donc, dos, droite, début, elle, elles, encore, essai,' .

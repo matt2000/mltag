@@ -1,7 +1,7 @@
 <?php
 
 // Swedish Stopwords
-function autordf_stopwords_sv() {
+function mltag_stopwords_sv() {
   $sp = 'aderton, adertonde, adjö, aldrig, alla, allas, allt, alltid, alltså,' .
       ' andra, andras, annan, annat, ännu, artonde, artonn, åtminstone, att,' .
       ' åtta, åttio, åttionde, åttonde, även, båda, bådas, bakom, bara, bäst,' .

@@ -15,7 +15,7 @@ class Stopwords {
    */
   function  prepare_stopwords() {
     module_load_include('inc', 'mltag', 'stopwords/stopwords_en');
-    $stopwords_from_file = stopwords_en();
+    $stopwords_from_file = mltag_stopwords_en();
     $stopwords_user = variable_get('stopwords_textfield', NULL);
     if (trim($stopwords_user)!=NULL || trim($stopwords_user)!='') {
       

@@ -1,7 +1,7 @@
 <?php
 
 // English Stopwords
-function stopwords_en() {
+function mltag_stopwords_en() {
    /**
     * changed by Arjun to add more stopwords from
     * wikipedia and other corpuses

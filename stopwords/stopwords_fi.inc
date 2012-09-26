@@ -1,7 +1,7 @@
 <?php
 
 // Finnish Stopwords
-function autordf_stopwords_fi() {
+function mltag_stopwords_fi() {
   $sp = 'aiemmin, aika, aikaa, aikaan, aikaisemmin, aikaisin, aikajen, aikana,' .
       ' aikoina, aikoo, aikovat, aina, ainakaan, ainakin, ainoa, ainoat,' .
       ' aiomme, aion, aiotte, aist, aivan, ajan, älä, alas, alemmas, älköön,' .

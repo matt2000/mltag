@@ -9,6 +9,4 @@ files[] = includes/content_tag.inc
 files[] = includes/stemming_porter_algo.inc
 dependencies[] = taxonomy
 configure = admin/configure/mltag
-version = "7.x-1.x-dev"
 core = "7.x"
-project = "mltag"

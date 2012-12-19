@@ -3,7 +3,7 @@
 /**
  * @file
  * Contains code for Tokenising a given content.
- * It takes $content as input string and has a 
+ * It takes $content as input string and has a
  * Word Tokeniser - returns an array of words
  * and also a sentence Tokeniser- Returns an array of sentences.
  */
@@ -11,29 +11,29 @@
 
 class Tokenizer {
   /**
-   * Delimiter value
+   * Delimiter value.
    */
-  protected $delim;  
+  protected $delim;
   /**
-   * Generated tokens for the string
+   * Generated tokens for the string.
    */
   protected $tokens;
   /**
-   * Split a text separated by space into array of words
-   * 
-   * @param string $content
+   * Split a text separated by space into array of words.
+   *
+   * @param string $string
    *   Content separated by spaces that will be splitted into array of words
-   * 
+   *
    * @return array
    *   Array of words
-   */  
-  function __construct($string, $delim = ' ') {
+   */
+  public function __construct($string, $delim = ' ') {
     $this->delim = $delim;
     $string = self::stringClean($string);
     $this->tokens = self::stringTokenizer($string, $delim);
-  }  
+  }
   /**
-   * Return List of generated tokens
+   * Return List of generated tokens.
    * @return array
    *   List of generated tokens
    */
@@ -45,13 +45,13 @@ class Tokenizer {
    *
    * @param string $string
    *   String to clean
-   *   
+   *
    * @return string
    *   Cleaned string
    */
   public function stringClean($string) {
     // Convert everthing to lowercase.
-    $string = strtolower($string);
+    $string = drupal_strtolower($string);
     // Remove html tags.
     $string = strip_tags($string);
     // For end of line (or begining).
@@ -62,57 +62,59 @@ class Tokenizer {
     $string = preg_replace('/[\!]+/', '\!', $string);
     // Drupal_set_message($string);
     return $string;
-  }  
+  }
   /**
    * Tokenize a given string.
-   * 
+   *
    * @param string $string
    *   String to tokenize
    * @param char $delim
    *   Delimiter character
-   *   
+   *
    * @return array
    *   List of generated tokens
    */
-  public static function stringTokenizer($string, $delim = ' ') {    
+  public static function stringTokenizer($string, $delim = ' ') {
     $words = explode($delim, $string);
-    $tokens = array();    
+    $tokens = array();
     foreach ($words as $word) {
       $word = strtok($word, '\'');
       // If word ends with . and its Not an abbrevation M.S.
       $endswith = self::endsWith($word);
-      if ($endswith == '.' && strpos($word, '.') != strlen($word) -1) {
+      if ($endswith == '.' && strpos($word, '.') != drupal_strlen($word) - 1) {
         array_push($tokens, $word);
       }
       // If word ends with .
       elseif ($endswith == '.' || $endswith == ',' || $endswith == ';' || $endswith == '?' || $endswith == ':') {
         $word = trim(preg_replace('/[^a-z0-9]/', '', $word));
-        if ($word != '' ||$word != NULL)  
-        array_push($tokens, $word);
-        // array_push($tokens, '.');  
+        if ($word != '' || $word != NULL) {
+          array_push($tokens, $word);
+        }
+        // array_push($tokens, '.');
       }
       // If word ends with comma ,
       /*
       else if ($endswith == ',') {
-        array_push($tokens, substr($word, 0, -1));
-        //array_push($tokens, ',');
+      array_push($tokens, substr($word, 0, -1));
+      //array_push($tokens, ',');
       }
       else if ($endswith == ';') {
-        array_push($tokens, substr($word, 0, -1));
-        //array_push($tokens, ';');
+      array_push($tokens, substr($word, 0, -1));
+      //array_push($tokens, ';');
       }
       else if ($endswith == '?') {
-        array_push($tokens, substr($word, 0, -1));
-        //array_push($tokens, ';');
+      array_push($tokens, substr($word, 0, -1));
+      //array_push($tokens, ';');
       }
       else if ($endswith == ':') {
-        array_push($tokens, substr($word, 0, -1));
-        //array_push($tokens, ':'); 
+      array_push($tokens, substr($word, 0, -1));
+      //array_push($tokens, ':');
       }*/
       else {
         $word = trim(preg_replace('/[^a-z0-9]/', '', $word));
-        if ($word != '' ||$word != NULL)
-        array_push($tokens, $word);        
+        if ($word != '' ||$word != NULL) {
+          array_push($tokens, $word);
+        }
       }
     }
     return $tokens;
@@ -121,20 +123,19 @@ class Tokenizer {
    * Return last parts of string.
    */
   public static function endsWith($haystack, $len = 1) {
-    return substr($haystack, strlen($haystack) - $len, $len);
+    return drupal_substr($haystack, drupal_strlen($haystack) - $len, $len);
   }
 }
 /**
- * 
+ *
  * @author Arjun Kapur
  * For finding out sentences in a string
  * First I break them into words to analyze abbreviations like U.S.A
  * and then I combine them into a string only to be exploded later
  * by common end points of a sentence like - dot, ?, !, ; etc.
- *
  */
 class TokenizeSentence {
-  
+
   /**
    * Delimiter value
    */
@@ -144,25 +145,25 @@ class TokenizeSentence {
    */
   protected $tokens;
   /**
-   * Generated sentences from the text 
+   * Generated sentences from the text
    */
   protected $sentences;
   /**
-   * Split a text separated by space into array of words
+   * Split a text separated by space into array of words.
    *
-   * @param string $content
+   * @param string $string
    *   Content separated by spaces that will be splitted into array of words
    *
    * @return array
    *   Array of words
    */
-  function __construct($string, $delim = ' ') {
+  public function __construct($string, $delim = ' ') {
     $this->delim = $delim;
     $string = self::contentClean($string);
     $this->sentences = self::sentenceTokenizer($string, $delim);
   }
   /**
-   * List of generated tokens
+   * List of generated tokens.
    * @return array
    *   List of generated tokens
    */
@@ -174,13 +175,14 @@ class TokenizeSentence {
    *
    * @param string $string
    *   String to clean
+   *
    * @return string
    *   Cleaned string
    */
   public function contentClean($string) {
     // Convert everthing to lowercase.
-    $string = strtolower($string);
-    // Remove html tags
+    $string = drupal_strtolower($string);
+    // Remove html tags.
     $string = strip_tags($string);
     // For end of line (or begining).
     $string = trim($string);
@@ -190,14 +192,16 @@ class TokenizeSentence {
     return $string;
   }
   /**
-   * Tokenize a given string and return the sentences 
-   * after combining the tokens together and then exploding them
-   * to capture the individual sentences together.
+   * Tokenize a given string.
+   *
+   * And return the sentences after combining the tokens together and then
+   * exploding them to capture the individual sentences together.
    *
    * @param string $string
    *   String to tokenize
    * @param char $delim
    *   Delimiter character
+   *
    * @return array
    *   List of generated sentences
    */
@@ -209,7 +213,7 @@ class TokenizeSentence {
       $word = strtok($word, '\'');
       // If word ends with . and its Not an abbrevation M.S.
       $endswith = self::endsWith($word);
-      if ($endswith == '.' && strpos($word, '.') != strlen($word) -1) {
+      if ($endswith == '.' && strpos($word, '.') != drupal_strlen($word) - 1) {
         array_push($tokens, $word);
       }
       // If word ends with .
@@ -221,21 +225,22 @@ class TokenizeSentence {
         }
       }
       elseif ($endswith == ';') {
-        array_push($tokens, substr($word, 0, -1));
+        array_push($tokens, drupal_substr($word, 0, -1));
         array_push($tokens, ';');
       }
       elseif ($endswith == '?') {
-        array_push($tokens, substr($word, 0, -1));
+        array_push($tokens, drupal_substr($word, 0, -1));
         array_push($tokens, ';');
       }
       elseif ($endswith == '!') {
-        array_push($tokens, substr($word, 0, -1));
+        array_push($tokens, drupal_substr($word, 0, -1));
         array_push($tokens, '!');
       }
       else {
         $word = trim(preg_replace('/[^a-z0-9]/', '', $word));
-        if ($word!='' ||$word != NULL)
+        if ($word != '' ||$word != NULL) {
           array_push($tokens, $word);
+        }
       }
     }
     $content = implode(' ', $tokens);
@@ -246,6 +251,6 @@ class TokenizeSentence {
    * Return last parts of string.
    */
   public static function endsWith($haystack, $len = 1) {
-    return substr($haystack, strlen($haystack) - $len, $len);
+    return drupal_substr($haystack, drupal_strlen($haystack) - $len, $len);
   }
 }

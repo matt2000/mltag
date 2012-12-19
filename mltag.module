@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * Module file.
+ */
 
 /**
  * Implements hook_help().
@@ -7,39 +11,37 @@ function mltag_help($path, $arg) {
   $output = '';
   switch ($path) {
     case "admin/help#mltag":
-      $msg = 'A module to populate Tags for content using Machine Learning Algorithms - a GSOC 2012 project. 
-              Here are some steps for using MLTag- <br> 
-              1. Install MLTag and jump to the configuration page. <br>
-              2. Select the algorithm from the drop down list.<br>
-              3. Check the \'Enable Learning\' checkbox if you want MLTag to propose Tags based on the Learning Algorithm. Unchecking this option will propose Implicit tags which are based on current content only.<br> 
-              4. Click the \'Perform Training\' button to train the model.<br>
-              5. Click again to confirm the action. It takes some time to train the model based on the amount of content you have on your website.<br>
-              6. The status of the Model is displayed right beneath the Perform Training Button.<br>
-              7. Check the \'Implicit Tag Count\' checkbox if you want MLTag to train both on Published  & Unpublished content. Unchecking this option trains the model only on Published content.<br>
-              8. Specify the max number of Implicit tags you want to propose in the text field. The minimum allowed value here is 10.<br>
-              9. The next group of checkboxes displays the Vocabularies defined in the <b>Taxonomy Module</b>. You can add customized terms (which will be given higher priority) for training the model by choosing appropriate vocabularies here.<br>
-             10. Below you can check the Node Types on which you want to use MLTag.<br>
-             11. Save the settings.<br>
-             <br>
-             Whenever you add/edit a new article. MLTag displays a button <b>\'Suggest Tags\'</b> in the settings panel. On clicking this Implicit Tags and Learned Tags tables will be popualted by ajax. 
+      $msg = 'A module to populate Tags for content using Machine Learning Algorithms - a GSOC 2012 project.
+              Here are some steps for using MLTag- <br />
+              1. Install MLTag and jump to the configuration page. <br />
+              2. Select the algorithm from the drop down list.<br />
+              3. Check the \'Enable Learning\' checkbox if you want MLTag to propose Tags based on the Learning Algorithm. Unchecking this option will propose Implicit tags which are based on current content only.<br />
+              4. Click the \'Perform Training\' button to train the model.<br />
+              5. Click again to confirm the action. It takes some time to train the model based on the amount of content you have on your website.<br />
+              6. The status of the Model is displayed right beneath the Perform Training Button.<br />
+              7. Check the \'Implicit Tag Count\' checkbox if you want MLTag to train both on Published  & Unpublished content. Unchecking this option trains the model only on Published content.<br />
+              8. Specify the max number of Implicit tags you want to propose in the text field. The minimum allowed value here is 10.<br />
+              9. The next group of checkboxes displays the Vocabularies defined in the <b>Taxonomy Module</b>. You can add customized terms (which will be given higher priority) for training the model by choosing appropriate vocabularies here.<br />
+             10. Below you can check the Node Types on which you want to use MLTag.<br />
+             11. Save the settings.<br />
+             <br />
+             Whenever you add/edit a new article. MLTag displays a button <b>\'Suggest Tags\'</b> in the settings panel. On clicking this Implicit Tags and Learned Tags tables will be popualted by ajax.
              For Implicit tags the terms with the highest Chi Square values are more likely to be tags for the current content.
-             The Learned Tags are proposed based on the model we trained earlier.<br>
+             The Learned Tags are proposed based on the model we trained earlier.<br />
              Select any number of tags you want to tag the content with and save the article.
-             The content will be automatically tagged with the chosen terms.<br>The Learned model will also be updated based on your tagging preferences and on the new textual content you have posted on your website.';  
+             The content will be automatically tagged with the chosen terms.<br />The Learned model will also be updated based on your tagging preferences and on the new textual content you have posted on your website.';
       $output = t($msg);
       break;
   }
   return $output;
 }
 /**
- * Implementation of hook_form_alter() for a node
+ * Implements of hook_form_alter().
  */
 function mltag_form_alter(&$form, &$form_state, $form_id) {
   $bundles = variable_get('mltag_node_types', array('article'));
   if (isset($form['type']) && $form['type']['#value'] . '_node_form' == $form_id && in_array($form['type']['#value'], $bundles, TRUE)) {
-    
-      
-   $form['mltag_new'] = array(
+    $form['mltag_new'] = array(
       '#type' => 'fieldset',
       '#title' => t('MLTag settings'),
       '#collapsible' => TRUE,
@@ -47,76 +49,71 @@ function mltag_form_alter(&$form, &$form_state, $form_id) {
       '#group' => 'additional_settings',
       '#tree' => TRUE,
       '#weight' => -2,
-      '#attached' => array(
-         // 'js' => array('vertical-tabs' => drupal_get_path('module', 'vertical_tabs_example') . '/vertical_tabs_example.js',
-       ), 
       '#attributes' => array('class' => array('mltag-settings')),
     );
-    
+
     $form['mltag_new']['tag'] = array(
-        '#type' => 'button',
-        '#value' => t("Suggest Tags"),
-        '#name' => t('click_tags'),
-        '#ajax' => array(
-            'callback' => 'mltag_suggest_tags_ajax',
-            'wrapper' => 'mltag_suggest_tags_table_div',
-            'effect' => 'slide',
-            ),
+      '#type' => 'button',
+      '#value' => t("Suggest Tags"),
+      '#name' => t('click_tags'),
+      '#ajax' => array(
+        'callback' => 'mltag_suggest_tags_ajax',
+        'wrapper' => 'mltag_suggest_tags_table_div',
+        'effect' => 'slide',
+      ),
     );
-    
+
     /*
     $form['mltag_new']['sample_text'] = array(
-      '#prefix' => '<div id="mltag_suggest_tags_markup_div">',
-      '#suffix' => '</div>',
-      '#markup' => t('Your Tags will appear here'),
-      );
+    '#prefix' => '<div id="mltag_suggest_tags_markup_div">',
+    '#suffix' => '</div>',
+    '#markup' => t('Your Tags will appear here'),
+    );
     */
-   
-   $algo = variable_get('algo_type');
+
+    $algo = variable_get('algo_type');
     if ($algo == 1) {
       $header = array(
-          'tag' => t('Tag'),
-          'frequency' => t('Frequency'), 
-          );
+        'tag' => t('Tag'),
+        'frequency' => t('Frequency'),
+      );
     }
     if ($algo == 2) {
-    $header = array(
+      $header = array(
         'tag' => t('Tags'),
         'chi' => t('Chi Square Value'),
-    );
+      );
     }
     $form['mltag_new']['myselector'] = array(
-        '#prefix' => '<div id="mltag_suggest_tags_table_div">',
-        '#suffix' => '</div>',
-        '#type' => 'fieldset',
-        //'#markup' => t('Your tags will appear here'),
+      '#prefix' => '<div id="mltag_suggest_tags_table_div">',
+      '#suffix' => '</div>',
+      '#type' => 'fieldset',
+      // '#markup' => t('Your tags will appear here'),
     );
-    
-     
+
     $form['mltag_new']['myselector']['implicit_tags'] = array(
-        '#type' => 'tableselect',
-        '#prefix' => '<h2>Implicit Tags</h2>',
-        '#title' => 'My Selector',
-        '#header' => $header,
-        '#attribute' => array('style' => 'display:none;'),           
+      '#type' => 'tableselect',
+      '#prefix' => '<h2>Implicit Tags</h2>',
+      '#title' => 'My Selector',
+      '#header' => $header,
+      '#attribute' => array('style' => 'display:none;'),
     );
-    
+
     $header_learn_tags = array(
-        'sno' => t('S. No.'),
-        'tags' => t('Tags'),
+      'sno' => t('S. No.'),
+      'tags' => t('Tags'),
     );
-    
+
     $form['mltag_new']['myselector']['learn_tags'] = array(
-        '#type' => 'tableselect',
-        '#title' => 'Tags from Learning',
-        '#prefix' => '<h2>Learned Tags</h2>',
-        '#header' => $header_learn_tags,
-        '#attribute' => array('style' => 'display:none;'),
-    ); 
+      '#type' => 'tableselect',
+      '#title' => 'Tags from Learning',
+      '#prefix' => '<h2>Learned Tags</h2>',
+      '#header' => $header_learn_tags,
+      '#attribute' => array('style' => 'display:none;'),
+    );
     if (isset($form_state['triggering_element'])) {
       if ($form_state['triggering_element']['#name'] == 'click_tags') {
-        //implicit tags
-        //drupal_set_message('button_clicked');
+        // Implicit tags.
         $values = $form_state['values'];
         $title = $values['title'];
         $body = '';
@@ -126,55 +123,50 @@ function mltag_form_alter(&$form, &$form_state, $form_id) {
         $content = check_plain($title) . ' ' . $body;
         if (trim($body) == '' || trim($body) == NULL) {
           $form['mltag_new']['myselector']['error']['#markup'] = t('No content to generate Tags !');
-         // exit();
         }
         else {
           $output = '';
           $options_test = mltag_get_implicit_options($content);
-          //drupal_set_message(print_r($options_test, TRUE));
           if ($options_test == NULL || empty($options_test)) {
-            $output = t('Content is insufficient to generate Tags using this algorithm. <br>Please choose other algorithm from Settings Page.<br />');
+            $output = t('Content is insufficient to generate Tags using this algorithm. <br />Please choose other algorithm from Settings Page.<br />');
             $form['mltag_new']['myselector']['error']['#markup'] = $output;
           }
-          else 
+          else {
             $form['mltag_new']['myselector']['implicit_tags']['#options'] = $options_test;
-  
-          //learned tags
+          }
+          // Learned tags.
           if (variable_get('enable_learning') == TRUE) {
-          
             $options_learn = mltag_get_learned_options($content);
             if ($options_learn == NULL || empty($options_learn)) {
-              $output .= t("No Tags based on learning were found..<br>This happens if MLTag could not find any relation between new and existing content<br> Or if you have not Trained your model recently<br><b><u>Suggestion</u></b>- Please keep your model Trained up-to-date");
+              $output .= t("No Tags based on learning were found..<br />This happens if MLTag could not find any relation between new and existing content<br /f> Or if you have not Trained your model recently<br /><b><u>Suggestion</u></b>- Please keep your model Trained up-to-date");
               $form['mltag_new']['myselector']['error']['#markup'] = $output;
-              //break; 
+              // break;.
             }
-            else
+            else {
               $form['mltag_new']['myselector']['learn_tags']['#options'] = $options_learn;
+            }
           }
         }
       }
     }
-   
-    
-    
     $form['#attached']['css'] = array(
-        drupal_get_path('module', 'mltag') . '/css/tableselect.css',
+      drupal_get_path('module', 'mltag') . '/css/tableselect.css',
     );
-   
-    
     $form['actions']['submit']['#submit'][] = 'mltag_custom_submit_function';
-  }// if ends
-  
-}// function ends
+    // If ends.
+  }
+  // Function ends.
+}
 /**
- * Populates implicit tags for the tableselect
- * @param Textual content to tag
+ * Populates implicit tags for the tableselect.
+ *
+ * @param string $content
+ *   Textual content to tag
  */
 function mltag_get_implicit_options($content) {
-  
   include_once 'includes/content_tag.inc';
   $algo = variable_get('algo_type');
-  //insert count here
+  // Insert count here.
   $count = variable_get('implicit_tag_count');
   $tags = mltag_content_tag($content, $algo, $count);
   if (empty($tags)) {
@@ -183,138 +175,130 @@ function mltag_get_implicit_options($content) {
   $options_test = array();
   if ($algo == '1') {
     foreach ($tags as $key => $value) {
-    
       $options_test[$key] = array(
-          'tag' => $key,
-          'frequency' => $value,
+        'tag' => $key,
+        'frequency' => $value,
       );
     }
-    
   }
   if ($algo == '2') {
     foreach ($tags as $key => $value) {
-      
       $options_test[$key] = array(
-          'tag' => $key,
-          'chi' => $value,
+        'tag' => $key,
+        'chi' => $value,
       );
     }
   }
   return $options_test;
 }
 /**
- * Populates learned tags from the content
+ * Populates learned tags from the content.
  */
 function mltag_get_learned_options($content) {
-  
   include_once 'includes/content_tag.inc';
   $tags_from_learning = mltag_content_tag($content, 3, 20);
   if (empty($tags_from_learning)) {
     return NULL;
   }
-  $options_learn = array();      
-      foreach ($tags_from_learning as $key => $value) {
-        $options_learn["$value"] = array(
-            'sno' => "$key",
-            'tags' => "$value",
-        );                   
-      }
-  return $options_learn;    
+  $options_learn = array();
+  foreach ($tags_from_learning as $key => $value) {
+    $options_learn["$value"] = array(
+      'sno' => "$key",
+      'tags' => "$value",
+    );
+  }
+  return $options_learn;
 }
 
 /**
- * Implements ajax callback function on press of button
- * in node add/edit content form
- * 
+ * Implements ajax callback function.
  */
 function mltag_suggest_tags_ajax($form, &$form_state) {
   return $form['mltag_new']['myselector'];
 }
 
 /**
- * Updates the Taxonomy vocabualry to add the selected terms in the tableselect, tags the content via the tag field.
- * 
+ * Description follows.
+ *
+ * Updates the Taxonomy vocabualry to add the selected terms in the tableselect,
+ * tags the content via the tag field.
  */
 function mltag_node_presave($node) {
-  
   $selected_implicit_tags = $node->mltag_new['myselector']['implicit_tags'];
   $selected_learned_tags = $node->mltag_new['myselector']['learn_tags'];
-  
   $selected_tags = array();
   foreach ($selected_implicit_tags as $key => $value) {
-    if ($value != '0' && $value != NULL && trim($value) != '') 
+    if ($value != '0' && $value != NULL && trim($value) != '') {
       $selected_tags[] = $value;
+    }
   }
   foreach ($selected_learned_tags as $key => $value) {
-    if ($value != '0' && $value != NULL && trim($value) != '')
+    if ($value != '0' && $value != NULL && trim($value) != '') {
       $selected_tags[] = $value;
+    }
   }
-  
   $selected_tags = array_unique($selected_tags);
- 
   $vid = 1;
   $term_id = array();
-  
   foreach ($selected_tags as $key => $value) {
     if ($value != NULL && $value != '0') {
       $temp = mltag_custom_create_taxonomy_term($value, $vid);
-      $term_id["$temp"] = $value;  
+      $term_id["$temp"] = $value;
     }
   }
-  
   $temp_array = array();
-  
-  if (!isset($node->field_tags[$node->language]))
-    $count =0;
-  else { 
-    $count = count($node->field_tags[$node->language]);    
+
+  if (!isset($node->field_tags[$node->language])) {
+    $count = 0;
   }
-  
+  else {
+    $count = count($node->field_tags[$node->language]);
+  }
   $user_tags = array();
   if ($node->type == 'article') {
     foreach ($term_id as $tid => $word) {
-      $flag =0;
-      $i=0;
+      $flag = 0;
+      $i = 0;
       while ($i < $count) {
-        $current_term_id = $node->field_tags[$node->language]["$i"]['tid'];        
-        $exist_term_object =  taxonomy_term_load($current_term_id);
+        $current_term_id = $node->field_tags[$node->language]["$i"]['tid'];
+        $exist_term_object = taxonomy_term_load($current_term_id);
         $name = $exist_term_object->name;
-        $user_tags[] = $exist_term_object->name; //add to user_tags to update the model
-        if ($word == $name) {          
-          $flag = 1; //term already exists
-          break;         
+        // Add to user_tags to update the model.
+        $user_tags[] = $exist_term_object->name;
+        if ($word == $name) {
+          // Term already exists.
+          $flag = 1;
+          break;
         }
         $i++;
       }
       if ($flag == '0') {
-        $node->field_tags[$node->language][]['tid'] = $tid; //if term doesnt exist
-        $user_tags[] = $word; 
+        // If term doesnt exist.
+        $node->field_tags[$node->language][]['tid'] = $tid;
+        $user_tags[] = $word;
       }
     }
-  }//if ends
-        
-  //code for updating the model begins
-  
+    // If ends.
+  }
+  // Code for updating the model begins.
   $title = $node->title;
   $body = '';
   $body = $node->body[$node->language]['0']['value'];
   $content = check_plain($title) . ' ' . $body;
-  //drupal_set_message(print_r($content, TRUE));
-  $data_content = &drupal_static('mymodule_block_data');//will be called after data is entered into the database
+  // Will be called after data is entered into the database.
+  $data_content = &drupal_static('mymodule_block_data');
   $data_content = $content;
   $data_user_tags = &drupal_static('mymodule_block_array');
   $data_user_tags = $user_tags;
-  
-}
-
-
- function mltag_custom_submit_function($form, &$form_state) {
-     
-    //mltag_save_terms();
-    
 }
 /**
- * Make an entry into mltag_learn_tags table on new node insertion 
+ * Custom submit function.
+ */
+function mltag_custom_submit_function($form, &$form_state) {
+  // mltag_save_terms();
+}
+/**
+ * Make an entry into mltag_learn_tags table on new node insertion.
  */
 function mltag_node_insert($node) {
   $content = &drupal_static('mymodule_block_data');
@@ -322,109 +306,95 @@ function mltag_node_insert($node) {
   $nid = $node->nid;
   include_once 'includes/content_tag.inc';
   $tags = mltag_content_tag($content, 2, 10);
-  
   if ($tags > 5) {
     $timestamp = date('Y-m-d G:i:s');
-  
     $user_tags = array_flip($user_tags);
     db_merge('mltag_learn_tags')
-    ->key(array('nid' => $nid ))
-    ->fields(array('content_tags' => serialize($tags), 'user_tags' => serialize($user_tags), 'date_created' => $timestamp))
+    ->key(array('nid' => $nid))
+    ->fields(array(
+        'content_tags' => serialize($tags),
+        'user_tags' => serialize($user_tags),
+        'date_created' => $timestamp))
     ->execute();
-  
+
     $result = db_query("select nid, content_tags from {mltag_learn_tags}");
     $tags_learned = array();
     $tags_learned_array = array();
     while ($record = $result->fetchObject()) {
       $tags_learned["$record->nid"] = unserialize($record->content_tags);
     }
-  
+
     foreach ($tags_learned as $nid => $array) {
       $tags_learned_array = mltag_merge_array($tags_learned_array, $array);
     }
-     
+
     $sum = 0;
-  
     foreach ($tags_learned_array as $word => $chi) {
       $sum += $chi;
     }
-  
+
     $mean = $sum / count($tags_learned_array);
     $sd = mltag_sd($tags_learned_array);
     $ranked_tags = array();
     foreach ($tags_learned_array as $word => $chi) {
       $ranked_tags["$word"] = round((($chi - $mean) / $sd), 4);
     }
-  
     arsort($ranked_tags);
-    //$ranked_tags contains tags ranked using z-score
-  
+    // $ranked_tags contains tags ranked using z-score.
     $file = drupal_get_path("module", "mltag") . '/includes/learned_tags.txt';
     file_put_contents($file, urlencode(serialize($ranked_tags)));
-     
-  }//if ends
-  
+  }
 }
 /**
- * Update the entry in mltag_learn_tags on node edit
+ * Update the entry in mltag_learn_tags on node edit.
  */
 function mltag_node_update($node) {
   $content = &drupal_static('mymodule_block_data');
   $user_tags = &drupal_static('mymodule_block_array');
-  /*
-  drupal_set_message(print_r($content, TRUE));
-  drupal_set_message(print_r($user_tags, TRUE));
-  drupal_set_message(print_r($node->nid, TRUE));
-  */
   $nid = $node->nid;
   include_once 'includes/content_tag.inc';
   $tags = mltag_content_tag($content, 2, 10);
-  
   if ($tags > 5) {
     $timestamp = date('Y-m-d G:i:s');
-  
     $user_tags = array_flip($user_tags);
     db_merge('mltag_learn_tags')
-    ->key(array('nid' => $nid ))
-    ->fields(array('content_tags' => serialize($tags), 'user_tags' => serialize($user_tags), 'date_created' => $timestamp))
+    ->key(array('nid' => $nid))
+    ->fields(array(
+        'content_tags' => serialize($tags),
+        'user_tags' => serialize($user_tags),
+        'date_created' => $timestamp))
     ->execute();
-  
+
     $result = db_query("select nid, content_tags from {mltag_learn_tags}");
     $tags_learned = array();
     $tags_learned_array = array();
     while ($record = $result->fetchObject()) {
       $tags_learned["$record->nid"] = unserialize($record->content_tags);
     }
-  
+
     foreach ($tags_learned as $nid => $array) {
       $tags_learned_array = mltag_merge_array($tags_learned_array, $array);
     }
-     
     $sum = 0;
-  
     foreach ($tags_learned_array as $word => $chi) {
       $sum += $chi;
     }
-  
     $mean = $sum / count($tags_learned_array);
     $sd = mltag_sd($tags_learned_array);
     $ranked_tags = array();
     foreach ($tags_learned_array as $word => $chi) {
       $ranked_tags["$word"] = round((($chi - $mean) / $sd), 4);
     }
-  
+
     arsort($ranked_tags);
-    //$ranked_tags contains tags ranked using z-score
-  
+    // $ranked_tags contains tags ranked using z-score.
     $file = drupal_get_path("module", "mltag") . '/includes/learned_tags.txt';
     file_put_contents($file, urlencode(serialize($ranked_tags)));
-    //drupal_set_message(print_r($ranked_tags, TRUE));
-     
-  }//if ends
+  }
 }
 
 /**
- * Removes an entry from the database on Node delete
+ * Removes an entry from the database on Node delete.
  */
 function mltag_node_delete($node) {
   $nid = $node->nid;
@@ -445,14 +415,17 @@ function mltag_custom_create_taxonomy_term($name, $vid) {
 }
 
 /**
+ * Get Vocabulary.
+ *
  * This function will return a vocabulary object which matches the
  * given name. Will return null if no such vocabulary exists.
  *
  * @param String $vocabulary_name
- *   This is the name of the section which is required
+ *   This is the name of the section which is required.
+ *
  * @return Object
- *   This is the vocabulary object with the name
- *   or null if no such vocabulary exists
+ *   This is the vocabulary object with the name or null if no such vocabulary
+ *   exists.
  */
 function mltag_get_vocabulary_by_name($vocabulary_name) {
   $vocabs = taxonomy_get_vocabularies(NULL);
@@ -464,95 +437,88 @@ function mltag_get_vocabulary_by_name($vocabulary_name) {
   return NULL;
 }
 
-
 /**
  * Implements hook_menu().
  */
 function mltag_menu() {
   $items = array();
-  
   $items['admin/config/mltag'] = array(
-      'title' => 'MLTag Configuration Center',
-      'description' => 'Settings for MLTag module',
-      'position' =>  'left',
-      'weight' => -100,
-      'page callback' => 'system_admin_menu_block_page',
-      'access arguments' => array('administer site configuration'),
-      'file' => 'system.admin.inc',
-      'file path' => drupal_get_path('module', 'system'),
+    'title' => 'MLTag Configuration Center',
+    'description' => 'Settings for MLTag module',
+    'position' => 'left',
+    'weight' => -100,
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
   );
-         
+
   $items['admin/config/mltag/settings'] = array(
     'title' => 'MLtag Settings',
     'description' => 'Change General settings of MLTag',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('mltag_general_settings'),
     'type' => MENU_NORMAL_ITEM,
-    'access arguments' => array('administer site configuration'),  
+    'access arguments' => array('administer site configuration'),
   );
   /*
   $items['admin/config/mltag/stopwords'] = array(
-      'title' => 'MLtag Stopwords',
-      'description' => 'Alter StopWords used while parsing',
-      'page callback' => 'drupal_get_form',
-      'page arguments' => array('mltag_stopwords_settings'),
-      'type' => MENU_NORMAL_ITEM,
-      'access arguments' => array('administer site configuration'),
+  'title' => 'MLtag Stopwords',
+  'description' => 'Alter StopWords used while parsing',
+  'page callback' => 'drupal_get_form',
+  'page arguments' => array('mltag_stopwords_settings'),
+  'type' => MENU_NORMAL_ITEM,
+  'access arguments' => array('administer site configuration'),
   );
   */
   $items['admin/config/mltag/train'] = array(
-      'title' => 'MLTag Train Model',
-      'page callback' => 'drupal_get_form',
-      'page arguments' => array('mltag_configure_train_confirm'),
-      'access arguments' => array('administer site configuration'),
-      'type' => MENU_CALLBACK,      
-      );
-  
+    'title' => 'MLTag Train Model',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mltag_configure_train_confirm'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_CALLBACK,
+  );
   return $items;
 }
 
-
- /**
+/**
  * Implements mltag general settings form().
  */
-
 function mltag_general_settings() {
   $result = db_query("select date_created from {mltag_learn_tags} order by date_created desc");
   $record = $result->fetchObject();
   $num_rows = $result->rowCount();
   $form['algo_type'] = array(
-      '#type' => 'select',
-      '#default_value' => variable_get('algo_type', 2),
-      '#title' => 'Algorithm',
-      '#options' => array(
-          1 => 'Term Frequency',
-          2 => 'Word Co-occurrence Statistical Algorithm',
-      ),
-      '#description' => t('Choose an algorithm'),
+    '#type' => 'select',
+    '#default_value' => variable_get('algo_type', 2),
+    '#title' => 'Algorithm',
+    '#options' => array(
+      1 => 'Term Frequency',
+      2 => 'Word Co-occurrence Statistical Algorithm',
+    ),
+    '#description' => t('Choose an algorithm'),
   );
-   
-  $form['enable_learning'] = array( 
-      '#type' => 'checkbox',
-      '#title' => t('Enable Learning algorithm'),
-      '#default_value' => variable_get('enable_learning', TRUE),
-      );
-  
+
+  $form['enable_learning'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable Learning algorithm'),
+    '#default_value' => variable_get('enable_learning', TRUE),
+  );
+
   $form['mytextcontainer'] = array(
-          '#type' => 'container',
-          '#states' => array(
-              "visible" => array(
-                  "input[name='enable_learning']" => array("checked" => TRUE)),
-  ),
+    '#type' => 'container',
+    '#states' => array(
+      "visible" => array(
+        "input[name='enable_learning']" => array("checked" => TRUE)),
+    ),
   );
-  
+
   $form['mytextcontainer']['train'] = array(
-      '#type' => 'submit',
-      '#value' => t('Perform Training'),
-      '#submit' => array('mltag_train_submit'),
-      '#description' => t('<p>You can press this button to Train the model on your exisiting website content.</p><p>Training may take some time depending on the amount of website content.</p>'),
-      
-      );
-  
+    '#type' => 'submit',
+    '#value' => t('Perform Training'),
+    '#submit' => array('mltag_train_submit'),
+    '#description' => t('<p>You can press this button to Train the model on your exisiting website content.</p><p>Training may take some time depending on the amount of website content.</p>'),
+  );
   $status = '<br />You can press this button to Train the model on your exisiting website content.';
   $status .= ' Training may take some time depending on the amount of website content.';
   if ($num_rows > 0) {
@@ -562,80 +528,65 @@ function mltag_general_settings() {
     $status .= ' <p><u><b>Status</u> :</b> Model has not been trained till now. </p>';
   }
   $form['mytextcontainer']['status'] = array(
-  '#markup' => t($status),
-      
+    '#markup' => t($status),
   );
   $form['mytextcontainer']['unpublished'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Use Unpublished Data for Training'),
-      '#default_value' => variable_get('unpublished', TRUE),
-      '#description' => t('Check this option to train the model using both Published & Unpublished content. Unchecking this option trains the model only on Published content.'),
-      );
-  /*
-  $form['mytextcontainer']['learn_tag_count'] =array(
-      '#type' => 'textfield',
-      '#title' => t('Learned Tag Count'),
-      '#default_value' => variable_get('learn_tag_count', 15),
-      '#size' => 4,
-      '#description' => t('Specify the maximum number of Tags that MLTag should propose based on the Learning Algorithm. Minimum allowed value is 10.'),
+    '#type' => 'checkbox',
+    '#title' => t('Use Unpublished Data for Training'),
+    '#default_value' => variable_get('unpublished', TRUE),
+    '#description' => t('Check this option to train the model using both Published & Unpublished content. Unchecking this option trains the model only on Published content.'),
   );
-  */
-  
-  $form['implicit_tag_count'] =array(
-      '#type' => 'textfield',
-      '#title' => t('Implicit Tag Count'),
-      '#default_value' => variable_get('implicit_tag_count', 15),
-      '#size' => 4,
-      '#description' => t('Specify the maximum number of implicit tags that MLTag should propose. Minimum allowed value is 10.'),
+
+  $form['implicit_tag_count'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Implicit Tag Count'),
+    '#default_value' => variable_get('implicit_tag_count', 15),
+    '#size' => 4,
+    '#description' => t('Specify the maximum number of implicit tags that MLTag should propose. Minimum allowed value is 10.'),
   );
   if (module_exists('taxonomy')) {
-  $vocabulary = array();
-  $vocabulary = taxonomy_get_vocabularies();
-  $checklist_vocab_array = array(); 
-  foreach ($vocabulary as $item) {
-    $checklist_vocab_array[$item->vid] = $item->name;
-  }
-  
-  $form['user_vocab_list'] = array(
+    $vocabulary = array();
+    $vocabulary = taxonomy_get_vocabularies();
+    $checklist_vocab_array = array();
+    foreach ($vocabulary as $item) {
+      $checklist_vocab_array[$item->vid] = $item->name;
+    }
+
+    $form['user_vocab_list'] = array(
       '#type'             => 'checkboxes',
       '#title'            => t('Add terms to the Trained Model'),
       '#position'         => 'left' ,
       '#options'          => $checklist_vocab_array ,
       '#default_value'    => variable_get('user_vocab_list', FALSE),
       '#description'      => t('Users can add new terms explicitly to the Trained Model by choosing appropriate Vocabularies from above. These terms will be given higher weightage than those learned during Training'),
-  );
+    );
   }
 
   $node_types = node_type_get_types();
   foreach ($node_types as $node_type) {
     $types[$node_type->type] = $node_type->name;
   }
-  
+
   $form['mltag_node_types'] = array(
-      '#type' => 'checkboxes',
-      '#default_value' => variable_get('mltag_node_types', array('article')), 
-      '#title' => t('Node Types'),
-      '#options' => $types,
+    '#type' => 'checkboxes',
+    '#default_value' => variable_get('mltag_node_types', array('article')),
+    '#title' => t('Node Types'),
+    '#options' => $types,
   );
-  
   return system_settings_form($form);
 }
 /**
- * Validation code for the settings page
+ * Validation code for the settings page.
  */
 function mltag_general_settings_validate($form, &$form_state) {
-  /*
-  if ($form_state['values']['learn_tag_count'] < '10' ) {
-    // We notify the form API that this field has failed validation.
-    form_set_error('learn_tag_count', t('Learned Tag count cannot be less than 10.'));
-  }
-  */
-  if ($form_state['values']['implicit_tag_count'] < '10' ) {
+  if ($form_state['values']['implicit_tag_count'] < '10') {
     // We notify the form API that this field has failed validation.
     form_set_error('implicit_tag_count', t('Implicit Tag count cannot be less than 10.'));
   }
 }
-
+/**
+ * Get all children.
+ */
 function mltag_taxonomy_get_children_all($tid, $vid = 0, $key = 'tid') {
   $c = taxonomy_get_children($tid, $vid, $key);
   $result = array();
@@ -650,34 +601,47 @@ function mltag_taxonomy_get_children_all($tid, $vid = 0, $key = 'tid') {
   }
   return $result;
 }
-
+/**
+ * Redirect after training.
+ */
 function mltag_train_submit($form, &$form_state) {
-  $form_state['redirect'] = 'admin/config/mltag/train'; 
+  $form_state['redirect'] = 'admin/config/mltag/train';
 }
+
+/**
+ * Confirm training.
+ */
 function mltag_configure_train_confirm() {
   return confirm_form(array(), t('Are you sure you want to Train the model?'),
       'admin/config/mltag/settings', t('This action trains the model, and may be a lengthy process.'), t('Perform Training'), t('Cancel'));
 }
 
+/**
+ * Training confirmed. Start process.
+ */
 function mltag_configure_train_confirm_submit($form, &$form_state) {
   if ($form_state['values']['confirm']) {
-    mltag_train(); //function for training the past posts
-    
+    // Function for training the past posts.
+    mltag_train();
   }
-      
 }
- /**
+/**
+ * Main training algorithm.
+ *
  *	@todo- place a check for minimum content length to be used for algo-2
  *  		and if content length is small use algo-1 instead
- *  Main training algorithm.
- *  @var array $tags_learned 
+ *
+ *  @var array $tags_learned
  *  		stores key as nid and value as array of tags
  *  @var array $tags_learned_array
- *  		stores all the implicit tags. key is word and value is it's chi square value
+ *  		stores all the implicit tags. key is word and value is it's chi square
+ *      value
  *  @var $tags
  *  		 local var inside the while loop stores the implicit tags for the content
  *  @var $user_tags
- *  		 local var inside while loop stores the tags specified explicitly by the user. When inserted into the DBMS key is the word and value is the index (done by array-flip).  
+ *  		 local var inside while loop stores the tags specified explicitly by
+ *       the user. When inserted into the DBMS key is the word and value is
+ *       the index (done by array-flip).
  */
 function mltag_train() {
   drupal_set_time_limit(180);
@@ -687,212 +651,191 @@ function mltag_train() {
     $query
     ->fields('n', array('title', 'nid'))
     ->fields('f', array('body_value'))
-    ->join('field_data_body', 'f', 'n.nid = f.entity_id');       
+    ->join('field_data_body', 'f', 'n.nid = f.entity_id');
   }
   else {
-  $query = db_select('node', 'n');
-  $query
-  ->fields('n', array('title', 'nid'))
-  ->fields('f', array('body_value'))
-  ->condition('n.status', '1')
-  ->join('field_data_body', 'f', 'n.nid = f.entity_id');
+    $query = db_select('node', 'n');
+    $query
+    ->fields('n', array('title', 'nid'))
+    ->fields('f', array('body_value'))
+    ->condition('n.status', '1')
+    ->join('field_data_body', 'f', 'n.nid = f.entity_id');
   }
-  $result = $query->execute();  
+  $result = $query->execute();
   $record = $result->fetchAll();
   $num_rows_content = $result->rowCount();
   if ($num_rows_content == 0 || $num_rows_content == NULL) {
     drupal_set_message(t('Error : Since there is no pre-existing content on this website, therefore, the model can not be trained.<br /> Please add some content to the website and try again.'), 'error');
-  return;
+    return;
   }
-  
-  //This selects the tags specified explicitly by the user for each node
+  // This selects the tags specified explicitly by the user for each node.
   $query1 = db_select('taxonomy_index', 't');
   $query1
   ->fields('t', array('nid'))
   ->fields('data', array('name'))
   ->join('taxonomy_term_data', 'data', 't.tid = data.tid');
   $result1 = $query1->execute();
-  $record1 = $result1->fetchAll(); 
+  $record1 = $result1->fetchAll();
   $num_rows_tags = $result1->rowCount();
-  
   $i = 0;
   $tags_learned = array();
   $tags_learned_array = array();
-  while ($i<$num_rows_content) {
-      //drupal_set_message(print_r($record["$i"]->title,TRUE));
-  $content = '';
-  $content .= $record["$i"]->title;
-  $content = $content . ' ' . $record["$i"]->body_value;
-  //call tagging algorithm and extract 10 tags for each content. $tags array stores the tags dervied using algo 2 for each content
-  $tags = mltag_content_tag($content, 2, 10);
-  //drupal_set_message(print_r($tags,TRUE));
-  
-  $tags_count = count($tags);
-  if ($tags_count < 10) {
-    $diff = 10 - $tags_count;
-    $tags_extra = array();
-    $tags_extra = mltag_content_tag($content, 1, $diff);
-    $tags = array_merge($tags, $tags_extra);
+  while ($i < $num_rows_content) {
+    $content = '';
+    $content .= $record["$i"]->title;
+    $content = $content . ' ' . $record["$i"]->body_value;
+    // Call tagging algorithm and extract 10 tags for each content.
+    // $tags array stores the tags dervied using algo 2 for each content.
+    $tags = mltag_content_tag($content, 2, 10);
+    $tags_count = count($tags);
+    if ($tags_count < 10) {
+      $diff = 10 - $tags_count;
+      $tags_extra = array();
+      $tags_extra = mltag_content_tag($content, 1, $diff);
+      $tags = array_merge($tags, $tags_extra);
+    }
+
+    // user_tags stores the explicit tags for content.
+    $user_tags = array();
+    $temp_count = 0;
+    while ($temp_count < $num_rows_tags) {
+      $nid1 = $record["$i"]->nid;
+      $nid2 = $record1["$temp_count"]->nid;
+      if ($nid1 == $nid2) {
+        $user_tags[] = $record1["$temp_count"]->name;
+      }
+      $temp_count++;
+    }
+    $nid = $record["$i"]->nid;
+    $user_tags = array_flip($user_tags);
+    $tags_learned["$nid"] = $tags;
+    $timestamp = date('Y-m-d G:i:s');
+
+    db_merge('mltag_learn_tags')
+      ->key(array('nid' => $nid))
+      ->fields(array(
+          'content_tags' => serialize($tags),
+          'user_tags' => serialize($user_tags),
+          'date_created' => $timestamp,
+          ))
+      ->execute();
+    $i++;
   }
-  
-  // user_tags stores the explicit tags for content  
-  $user_tags = array();
-  $temp_count = 0;
-  while ($temp_count < $num_rows_tags) {
-    $nid1 = $record["$i"]->nid;
-    $nid2 = $record1["$temp_count"]->nid;
-    if ( $nid1 == $nid2 ) {
-      $user_tags[] = $record1["$temp_count"]->name;
-    } 
-    $temp_count++;
-  }
-    
-  $nid = $record["$i"]->nid;
-  $user_tags = array_flip($user_tags);
-  $tags_learned["$nid"] = $tags;
-  $timestamp = date('Y-m-d G:i:s');
-  
-  db_merge('mltag_learn_tags')
-    ->key(array('nid' => $nid ))
-    ->fields(array('content_tags' => serialize($tags), 'user_tags' => serialize($user_tags), 'date_created' => $timestamp))
-    ->execute();
- 
-  $i++;
-  }
-  
-  //make function end here
- mltag_rank_terms($tags_learned);
- $status = "The model has been trained successfully using $num_rows_content node contents existing on this website. ";
- drupal_set_message(check_plain($status), 'status');
- 
+
+  mltag_rank_terms($tags_learned);
+  $status = "The model has been trained successfully using $num_rows_content node contents existing on this website. ";
+  drupal_set_message(check_plain($status), 'status');
 }
-  
+
   /**
    * Ranking chi values using z-score method.
-   * The z-score of any one criterion 
-   * is calculated as = (actual value – mean of criterion)/standard deviation of criterion. 
-   * 
+   *
+   * The z-score of any one criterion
+   * is calculated as = (actual value – mean of criterion)
+   * divided by standard deviation of criterion.
    */
 function mltag_rank_terms($tags_learned) {
   $count = 0;
-  $tags_learned_array = array();  
+  $tags_learned_array = array();
   foreach ($tags_learned as $nid => $array) {
-      
     $tags_learned_array = mltag_merge_array($tags_learned_array, $array);
   }
-  //drupal_set_message(print_r($tags_learned_array, TRUE));
-   
   $sum = 0;
-  
   foreach ($tags_learned_array as $word => $chi) {
-      $sum += $chi;
+    $sum += $chi;
   }
-
   $mean = $sum / count($tags_learned_array);
   $sd = mltag_sd($tags_learned_array);
   $ranked_tags = array();
   foreach ($tags_learned_array as $word => $chi) {
-    $ranked_tags["$word"] = round((($chi - $mean) / $sd), 4); 
-    
-  } 
+    $ranked_tags["$word"] = round((($chi - $mean) / $sd), 4);
+  }
   arsort($ranked_tags);
-  $ranked_tags."\n";
-  //$ranked_tags contain tags ranked using z-score 
+  $ranked_tags . "\n";
+  // $ranked_tags contain tags ranked using z-score.
   $file = drupal_get_path("module", "mltag") . '/includes/learned_tags.txt';
   file_put_contents($file, urlencode(serialize($ranked_tags)));
-  //$content2 = file_get_contents($file);
-  //$arr = unserialize(urldecode($content2));
+  // $content2 = file_get_contents($file);
+  // $arr = unserialize(urldecode($content2));
   /*
   drupal_set_message(print_r($ranked_tags, TRUE));
   drupal_set_message(print_r($sd, TRUE));
   drupal_set_message(print_r($mean, TRUE));
-    */
+  */
 }
 
 /**
- * Function to calculate square of value - mean
- */ 
+ * Function to calculate square of value - mean.
+ */
 function mltag_sd_square($x, $mean) {
   return pow($x - $mean, 2);
 }
 /**
- * 
- * Function to calculate standard deviation (uses sd_square)
- */ 
+ * Function to calculate standard deviation (uses sd_square).
+ */
 function mltag_sd($array) {
-
-  // square root of sum of squares devided by N-1
-  return sqrt(array_sum(array_map("mltag_sd_square", $array, array_fill(0, count($array), (array_sum($array) / count($array)) ) ) ) / (count($array)-1) );
+  // Square root of sum of squares devided by N-1.
+  return sqrt(array_sum(array_map("mltag_sd_square", $array, array_fill(0, count($array), (array_sum($array) / count($array))))) / (count($array) - 1));
 }
 /**
  * Function to merge trained vocabulary arrays.
- * If on merge duplicate keys(tags or words) are encountered then the one having the maximum value( chi value) is chosen
- * in the final merged array.
+ *
+ * If on merge duplicate keys(tags or words) are encountered then the one
+ * having the maximum value( chi value) is chosen in the final merged array.
  */
 function mltag_merge_array($base, $sec) {
   $numargs = func_num_args();
-  //echo "<h1>".$numargs."</h2>";
-  for ($j=1; $j<($numargs); $j++) {
-    $m=0;
+  for ($j = 1; $j < ($numargs); $j++) {
+    $m = 0;
     $max = array();
-    $sec= func_get_arg($j);
+    $sec = func_get_arg($j);
     if (empty($base)) {
       $base = $sec;
       return $base;
     }
     foreach ($base as $base_key => $base_val) {
-    
-    foreach ($sec as $sec_key => $sec_val) {
-      
-
+      foreach ($sec as $sec_key => $sec_val) {
         if ($base_key === $sec_key) {
-        
-        $m = max($base_val, $sec_val);
-        $max[$base_key] = $m;
+          $m = max($base_val, $sec_val);
+          $max[$base_key] = $m;
         }
-        
         else {
           $base[$sec_key] = $sec_val;
         }
       }
     }
-
     foreach ($max as $mkey => $mvalue) {
-      
-        $base[$mkey] = $mvalue;
+      $base[$mkey] = $mvalue;
     }
-    
     unset($max);
   }
-    return $base;
+  return $base;
 }
 
 /**
- * Implementation of stopwords settings page
+ * Implementation of stopwords settings page.
  */
-
 function mltag_stopwords_settings() {
-  
   $form['stopwords_textfield'] = array(
     '#type' => 'textarea',
     '#cols' => 30,
     '#rows' => 10,
     '#title' => t('Stop Words'),
     '#description' => t('Stop Words removed during parsing of text'),
-    '#default_vale' => variable_get('stopwords_textfield'),             
+    '#default_vale' => variable_get('stopwords_textfield'),
   );
   return system_settings_form($form);
 }
-
+/**
+ * Custom Hook- Under development.
+ */
 function mltag_custom_algorithms() {
   return array(
-      'mymodule_first_algo' => array(
-          'label' => 'My first awesome algorithm',
-          'description' => 'This algorithm selects terms based on a ranking of their awesomeness.',
-      ),
-      'mymodule_other_algo' => array('label' => 'My other mysterious algorithm',
-      ),
+    'mymodule_first_algo' => array(
+      'label' => 'My first awesome algorithm',
+      'description' => 'This algorithm selects terms based on a ranking of their awesomeness.',
+    ),
+    'mymodule_other_algo' => array('label' => 'My other mysterious algorithm',
+    ),
   );
 }
-
-

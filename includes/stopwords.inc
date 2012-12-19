@@ -1,30 +1,25 @@
 <?php
 /**
- * @file 
- *   Code for Removing stopwords from content
- * @author Anil Kapur
- *
+ * @file
+ * Code for Removing stopwords from content.
  */
+
 class Stopwords {
   protected $stopwords;
   /**
    * Function constructor.
    */
-  function __construct() {
-    $this->stopwords = self::prepare_stopwords();
+  public function __construct() {
+    $this->stopwords = self::prepareStopwords();
   }
   /**
-   * Prepares a stopwords list using the stopwords_en.inc file
-   * and the stopwords defined by the user in the stopwords
-   * settings page.
-   * @todo extend to all languages for which .inc files are there
-   * in the stopwords folder.
+   * Prepares a stopwords list using the stopwords_en.inc file.
    */
-  function  prepare_stopwords() {
+  public function prepareStopwords() {
     module_load_include('inc', 'mltag', 'stopwords/stopwords_en');
     $stopwords_from_file = mltag_stopwords_en();
     $stopwords_user = variable_get('stopwords_textfield', NULL);
-    if (trim($stopwords_user)!=NULL || trim($stopwords_user)!='') {
+    if (trim($stopwords_user) != NULL || trim($stopwords_user) != '') {
       $stopwords_user = explode(', ', variable_get('stopwords_textfield'));
       $this->stopwords = array_merge($stopwords_from_file, $stopwords_user);
     }
@@ -35,19 +30,19 @@ class Stopwords {
     return $this->stopwords;
   }
   /**
-   * Remove Stopwords
+   * Remove Stopwords.
    */
-  function remove_stopwords($tokens) {
+  public function removeStopwords($tokens) {
     $stopwords = $this->stopwords;
     $new_tokens = array_diff($tokens, $stopwords);
-    // no need for the below code as changes added to the Tokenizer itself.
+    // No need for the below code as changes added to the Tokenizer itself.
     // special character array.
     return $new_tokens;
   }
   /**
-   * Remove Stopwords
+   * Remove Stopwords.
    */
-  function sentence_remove_stopwords($sentences) {
+  public function sentenceRemoveStopwords($sentences) {
     $stopwords = $this->stopwords;
     foreach ($sentences as $key => $value) {
       $array_temp = array();
@@ -62,5 +57,5 @@ class Stopwords {
       $sentences["$key"] = trim($output);
     }
     return $sentences;
-  }  
-} // Class ends.
+  }
+}

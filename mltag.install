@@ -1,39 +1,40 @@
-<?php 
+<?php
 /**
-* @file
-* Install, update, and uninstall functions for the MLTag module.
-*/
+ * @file
+ * Install, update, and uninstall functions for the MLTag module.
+ */
 
+/**
+ * Defines the schema for MLTag.
+ */
 function mltag_schema() {
   $schema['mltag_learn_tags'] = array(
-      'description' => t('Table for storing the learned model'),
-      'fields' => array(
-          'nid' => array(
-              'description' => t('Stores the node id'),
-              'type' => 'int',
-              'unsigned' => 'true',              
-              ),
-          'content_tags' => array(
-              'description' => t('Stores the learnt tags associative array derived from each content'),
-              'type' => 'varchar',
-              'length' => 2000,
-              'default' => ''
-              ),
-          'user_tags' => array(
-              'description' => t('Stores tags marked by the user for each content'),
-              'type' => 'varchar',
-              'length' => 2000,
-              'default' => ''
-              ),
-          'date_created' => array(
-              'description' => t('Stores the timestamp when the values were entered'),
-              'mysql_type' => 'DATETIME',
-			  'not null' => TRUE,
-              ),
-          ),
-      'primary key' => array('nid'),
-      );        
-
+    'description' => 'Table for storing the learned model',
+    'fields' => array(
+      'nid' => array(
+        'description' => 'Stores the node id',
+        'type' => 'int',
+        'unsigned' => 'true',
+      ),
+      'content_tags' => array(
+        'description' => 'Stores the learnt tags associative array derived from each content',
+        'type' => 'varchar',
+        'length' => 2000,
+        'default' => '',
+      ),
+      'user_tags' => array(
+        'description' => 'Stores tags marked by the user for each content',
+        'type' => 'varchar',
+        'length' => 2000,
+        'default' => '',
+      ),
+      'date_created' => array(
+        'description' => 'Stores the timestamp when the values were entered',
+        'mysql_type' => 'DATETIME',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('nid'),
+  );
   return $schema;
 }
- 

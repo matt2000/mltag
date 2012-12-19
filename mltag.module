@@ -755,13 +755,6 @@ function mltag_rank_terms($tags_learned) {
   // $ranked_tags contain tags ranked using z-score.
   $file = drupal_get_path("module", "mltag") . '/includes/learned_tags.txt';
   file_put_contents($file, urlencode(serialize($ranked_tags)));
-  // $content2 = file_get_contents($file);
-  // $arr = unserialize(urldecode($content2));
-  /*
-  drupal_set_message(print_r($ranked_tags, TRUE));
-  drupal_set_message(print_r($sd, TRUE));
-  drupal_set_message(print_r($mean, TRUE));
-  */
 }
 
 /**

@@ -6,4 +6,3 @@ files[] = includes/stopwords.inc
 files[] = includes/stemming_porter_algo.inc
 dependencies[] = taxonomy
 configure = admin/configure/mltag
-core = "7.x"

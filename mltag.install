@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * Install, update, and uninstall functions for the MLTag module.
+ * Install and uninstall functions for the MLTag module.
  */
 
 /**
@@ -38,3 +38,16 @@ function mltag_schema() {
   );
   return $schema;
 }
+
+/**
+ * Implements hook_uninstall().
+ */
+function mltag_uninstall() {
+   variable_del('algo_type');
+   variable_del('enable_learning');
+   variable_del('unpublished');
+   variable_del('implicit_tag_count');
+   variable_del('user_vocab_list');
+   variable_del('mltag_node_types');
+    
+ }

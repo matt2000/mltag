@@ -71,7 +71,7 @@ function mltag_form_alter(&$form, &$form_state, $form_id) {
     );
     */
 
-    $algo = variable_get('algo_type');
+    $algo = variable_get('algo_type', 2);
     if ($algo == 1) {
       $header = array(
         'tag' => t('Tag'),
@@ -405,7 +405,7 @@ function _mltag_write_record($tags, $user_tags, $ts, $nid) {
     ->execute();
     **/
   db_query('REPLACE INTO {mltag_learn_tags}
-                SET content_tags = %s, user_tags = %s, date_created = %d, nid = %d',
+                SET content_tags = "%s", user_tags = "%s", date_created = "%s", nid = %d',
               serialize($tags), serialize($user_tags), $ts, $nid);
 }
 
@@ -631,7 +631,7 @@ function mltag_configure_train_confirm() {
  */
 function mltag_configure_train_confirm_submit($form, &$form_state) {
   if ($form_state['values']['confirm']) {
-    $batch = array('operations' => array(array('mltag_train', array(10))));
+    $batch = array('operations' => array(array('mltag_train', array(50))));
     batch_set($batch);
   }
 }
@@ -665,11 +665,12 @@ function mltag_train($limit, &$context) {
     $context['sandbox']['max'] = db_result(db_query($query));
     $context['sandbox']['tags_learned'] = array();
   }
+  $context['sandbox']['set_start'] = $context['sandbox']['current_node'];
 
   module_load_include('inc', 'mltag', 'includes/content_tag');
 
   //$record will be an array of node content to work on.
-  $query = 'SELECT n.title, r.body FROM node n
+  $query = 'SELECT n.nid, n.title, r.body FROM node n
               LEFT JOIN node_revisions r on n.vid = r.vid
               WHERE n.nid > %d';
   if (!variable_get('mltag_unpublished', 0)) {
@@ -680,7 +681,6 @@ function mltag_train($limit, &$context) {
   $record = array();
   while ($row = db_fetch_object($result)) {
     $record[] = $row;
-    $max_node = $row->nid;
     $context['sandbox']['progress']++;
     $context['sandbox']['current_node'] = $row->nid;
   }
@@ -694,14 +694,15 @@ function mltag_train($limit, &$context) {
   $query = 'SELECT t.nid, d.name FROM {term_node} t
               LEFT JOIN {term_data} d ON t.tid = d.tid';
   if (!variable_get('mltag_unpublished', 0)) {
-    $query .= ' LEFT JOIN {node} node ON n.nid = node.nid WHERE node.status = 1 AND';
+    $query .= ' LEFT JOIN {node} node ON t.nid = node.nid WHERE node.status = 1 AND';
   } else {
     $query .= ' WHERE';
   }
-  $query .= ' t.nid > %d AND t.nid <= %d';
-  $result1 = db_query($query, $context['sandbox']['current_node'], $max_node);
+  $query .= ' t.nid >= %d AND t.nid <= %d';
+  //$context['message'] = $query;
+  $result1 = db_query($query, $context['sandbox']['set_start'], $context['sandbox']['current_node']);
   $terms = array();
-  while ($row = db_fetch_object($result)) {
+  while ($row = db_fetch_object($result1)) {
     $terms[$row->nid][] = $row->name;
   }
 
@@ -721,10 +722,11 @@ function mltag_train($limit, &$context) {
       $tags = array_merge($tags, $tags_extra);
     }
 
-    $nid = $record["$i"]->nid;
+    $nid = $record[$i]->nid;
     // user_tags stores the explicit tags for content.
+    // @todo user_tags is always being stored as NULL. :-(
     $user_tags = $terms[$nid];
-    $user_tags = array_flip($user_tags);
+    $user_tags = is_array($user_tags) ? array_flip($user_tags) : NULL;
     $context['sandbox']['tags_learned'][$nid] = $tags;
     $timestamp = date('Y-m-d G:i:s');
 
@@ -738,7 +740,7 @@ function mltag_train($limit, &$context) {
   }
   if ($context['finished'] >= 1) {
     mltag_rank_terms($context['sandbox']['tags_learned']);
-    $status = "The model has been trained successfully using $num_rows_content node contents existing on this website. ";
+    $status = "The model has been trained successfully using {$context['sandbox']['progress']} node contents existing on this website. ";
     drupal_set_message($status, 'status');
   }
 }

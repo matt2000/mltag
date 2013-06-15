@@ -631,10 +631,11 @@ function mltag_configure_train_confirm() {
  */
 function mltag_configure_train_confirm_submit($form, &$form_state) {
   if ($form_state['values']['confirm']) {
-    // Function for training the past posts.
-    mltag_train();
+    $batch = array('operations' => array(array('mltag_train', array(10))));
+    batch_set($batch);
   }
 }
+
 /**
  * Main training algorithm.
  *
@@ -653,48 +654,62 @@ function mltag_configure_train_confirm_submit($form, &$form_state) {
  *       the user. When inserted into the DBMS key is the word and value is
  *       the index (done by array-flip).
  */
-function mltag_train() {
-  drupal_set_time_limit(180);
+function mltag_train($limit, &$context) {
+  if (empty($context['sandbox'])) {
+    $context['sandbox']['progress'] = 0;
+    $context['sandbox']['current_node'] = 0;
+    $query = 'SELECT COUNT(DISTINCT nid) FROM {node}';
+    if (!variable_get('mltag_unpublished', 0)) {
+      $query .= ' WHERE status = 1';
+    }
+    $context['sandbox']['max'] = db_result(db_query($query));
+    $context['sandbox']['tags_learned'] = array();
+  }
+
   module_load_include('inc', 'mltag', 'includes/content_tag');
-  if (variable_get('unpublished')) {
-    $query = db_select('node', 'n');
-    $query
-    ->fields('n', array('title', 'nid'))
-    ->fields('f', array('body_value'))
-    ->join('field_data_body', 'f', 'n.nid = f.entity_id');
+
+  //$record will be an array of node content to work on.
+  $query = 'SELECT n.title, r.body FROM node n
+              LEFT JOIN node_revisions r on n.vid = r.vid
+              WHERE n.nid > %d';
+  if (!variable_get('mltag_unpublished', 0)) {
+    $query .= ' AND n.status = 1';
   }
-  else {
-    $query = db_select('node', 'n');
-    $query
-    ->fields('n', array('title', 'nid'))
-    ->fields('f', array('body_value'))
-    ->condition('n.status', '1')
-    ->join('field_data_body', 'f', 'n.nid = f.entity_id');
+  $query .= ' ORDER BY n.nid ASC';
+  $result = db_query_range($query, $context['sandbox']['current_node'], 0, $limit);
+  $record = array();
+  while ($row = db_fetch_object($result)) {
+    $record[] = $row;
+    $max_node = $row->nid;
+    $context['sandbox']['progress']++;
+    $context['sandbox']['current_node'] = $row->nid;
   }
-  $result = $query->execute();
-  $record = $result->fetchAll();
-  $num_rows_content = $result->rowCount();
+  $num_rows_content = count($record);
   if ($num_rows_content == 0 || $num_rows_content == NULL) {
     drupal_set_message(t('Error : Since there is no pre-existing content on this website, therefore, the model can not be trained.<br /> Please add some content to the website and try again.'), 'error');
     return;
   }
 
   // This selects the tags specified explicitly by the user for each node.
-  $query1 = db_select('taxonomy_index', 't');
-  $query1
-  ->fields('t', array('nid'))
-  ->fields('data', array('name'))
-  ->join('taxonomy_term_data', 'data', 't.tid = data.tid');
-  $result1 = $query1->execute();
-  $record1 = $result1->fetchAll();
-  $num_rows_tags = $result1->rowCount();
+  $query = 'SELECT t.nid, d.name FROM {term_node} t
+              LEFT JOIN {term_data} d ON t.tid = d.tid';
+  if (!variable_get('mltag_unpublished', 0)) {
+    $query .= ' LEFT JOIN {node} node ON n.nid = node.nid WHERE node.status = 1 AND';
+  } else {
+    $query .= ' WHERE';
+  }
+  $query .= ' t.nid > %d AND t.nid <= %d';
+  $result1 = db_query($query, $context['sandbox']['current_node'], $max_node);
+  $terms = array();
+  while ($row = db_fetch_object($result)) {
+    $terms[$row->nid][] = $row->name;
+  }
+
   $i = 0;
-  $tags_learned = array();
-  $tags_learned_array = array();
   while ($i < $num_rows_content) {
     $content = '';
     $content .= $record["$i"]->title;
-    $content = $content . ' ' . $record["$i"]->body_value;
+    $content = $content . ' ' . $record["$i"]->body;
     // Call tagging algorithm and extract 10 tags for each content.
     // $tags array stores the tags dervied using algo 2 for each content.
     $tags = mltag_content_tag($content, 2, 10);
@@ -706,36 +721,26 @@ function mltag_train() {
       $tags = array_merge($tags, $tags_extra);
     }
 
-    // user_tags stores the explicit tags for content.
-    $user_tags = array();
-    $temp_count = 0;
-    while ($temp_count < $num_rows_tags) {
-      $nid1 = $record["$i"]->nid;
-      $nid2 = $record1["$temp_count"]->nid;
-      if ($nid1 == $nid2) {
-        $user_tags[] = $record1["$temp_count"]->name;
-      }
-      $temp_count++;
-    }
     $nid = $record["$i"]->nid;
+    // user_tags stores the explicit tags for content.
+    $user_tags = $terms[$nid];
     $user_tags = array_flip($user_tags);
-    $tags_learned["$nid"] = $tags;
+    $context['sandbox']['tags_learned'][$nid] = $tags;
     $timestamp = date('Y-m-d G:i:s');
 
-    db_merge('mltag_learn_tags')
-      ->key(array('nid' => $nid))
-      ->fields(array(
-          'content_tags' => serialize($tags),
-          'user_tags' => serialize($user_tags),
-          'date_created' => $timestamp,
-          ))
-      ->execute();
+    _mltag_write_record($tags, $user_tags, $timestamp, $nid);
     $i++;
   }
 
-  mltag_rank_terms($tags_learned);
-  $status = "The model has been trained successfully using $num_rows_content node contents existing on this website. ";
-  drupal_set_message(check_plain($status), 'status');
+  if ($context['sandbox']['progress'] != $context['sandbox']['max']) {
+    $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['max'];
+    $context['message'] = 'Node ' . $nid;
+  }
+  if ($context['finished'] >= 1) {
+    mltag_rank_terms($context['sandbox']['tags_learned']);
+    $status = "The model has been trained successfully using $num_rows_content node contents existing on this website. ";
+    drupal_set_message($status, 'status');
+  }
 }
 
   /**

@@ -40,6 +40,13 @@ function mltag_schema() {
 }
 
 /**
+ * Impelments hook_install
+ */
+function mltag_install() {
+   drupal_install_schema('mltag');
+}
+
+/**
  * Implements hook_uninstall().
  */
 function mltag_uninstall() {
@@ -49,5 +56,4 @@ function mltag_uninstall() {
    variable_del('implicit_tag_count');
    variable_del('user_vocab_list');
    variable_del('mltag_node_types');
-    
- }
+}

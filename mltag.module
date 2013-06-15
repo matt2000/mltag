@@ -218,8 +218,17 @@ function mltag_suggest_tags_ajax($form, &$form_state) {
 }
 
 /**
- * Description follows.
- *
+ * Implements hook_nodeapi.
+ */
+function mltag_nodeapi(&$node, $op, $a3, $a4) {
+  $fn = 'mltag_node_'. $op;
+  if (function_exists($fn)) {
+    return $fn($node, $op, $a3, $a4);
+  }
+}
+
+
+/**
  * Updates the Taxonomy vocabualry to add the selected terms in the tableselect,
  * tags the content via the tag field.
  */
@@ -309,13 +318,7 @@ function mltag_node_insert($node) {
   if ($tags > 5) {
     $timestamp = date('Y-m-d G:i:s');
     $user_tags = array_flip($user_tags);
-    db_merge('mltag_learn_tags')
-    ->key(array('nid' => $nid))
-    ->fields(array(
-        'content_tags' => serialize($tags),
-        'user_tags' => serialize($user_tags),
-        'date_created' => $timestamp))
-    ->execute();
+    _mltag_write_record($tags, $user_tags, $timestamp, $nid);
 
     $result = db_query("select nid, content_tags from {mltag_learn_tags}");
     $tags_learned = array();
@@ -357,13 +360,8 @@ function mltag_node_update($node) {
   if ($tags > 5) {
     $timestamp = date('Y-m-d G:i:s');
     $user_tags = array_flip($user_tags);
-    db_merge('mltag_learn_tags')
-    ->key(array('nid' => $nid))
-    ->fields(array(
-        'content_tags' => serialize($tags),
-        'user_tags' => serialize($user_tags),
-        'date_created' => $timestamp))
-    ->execute();
+
+    _mltag_write_record($tags, $user_tags, $timestamp, $nid);
 
     $result = db_query("select nid, content_tags from {mltag_learn_tags}");
     $tags_learned = array();
@@ -394,13 +392,29 @@ function mltag_node_update($node) {
 }
 
 /**
+ * Helper function for reuable query.
+ */
+function _mltag_write_record($tags, $user_tags, $ts, $nid) {
+  /**
+    db_merge('mltag_learn_tags')
+    ->key(array('nid' => $nid))
+    ->fields(array(
+        'content_tags' => serialize($tags),
+        'user_tags' => serialize($user_tags),
+        'date_created' => $timestamp))
+    ->execute();
+    **/
+  db_query('REPLACE INTO {mltag_learn_tags}
+                SET content_tags = %s, user_tags = %s, date_created = %d, nid = %d',
+              serialize($tags), serialize($user_tags), $ts, $nid);
+}
+
+
+/**
  * Removes an entry from the database on Node delete.
  */
 function mltag_node_delete($node) {
-  $nid = $node->nid;
-  $num_deleted = db_delete('mltag_learn_tags')
-  ->condition('nid', $nid)
-  ->execute();
+  return db_query("DELETE FROM {mltag_learn_tags} WHERE nid = %d", $node->nid);
 }
 
 /**
@@ -442,18 +456,14 @@ function mltag_get_vocabulary_by_name($vocabulary_name) {
  */
 function mltag_menu() {
   $items = array();
-  $items['admin/config/mltag'] = array(
+  $items['admin/settings/mltag'] = array(
     'title' => 'MLTag Configuration Center',
     'description' => 'Settings for MLTag module',
-    'position' => 'left',
-    'weight' => -100,
     'page callback' => 'system_admin_menu_block_page',
     'access arguments' => array('administer site configuration'),
-    'file' => 'system.admin.inc',
-    'file path' => drupal_get_path('module', 'system'),
   );
 
-  $items['admin/config/mltag/settings'] = array(
+  $items['admin/settings/mltag/settings'] = array(
     'title' => 'MLtag Settings',
     'description' => 'Change General settings of MLTag',
     'page callback' => 'drupal_get_form',
@@ -462,7 +472,7 @@ function mltag_menu() {
     'access arguments' => array('administer site configuration'),
   );
   /*
-  $items['admin/config/mltag/stopwords'] = array(
+  $items['admin/settings/mltag/stopwords'] = array(
   'title' => 'MLtag Stopwords',
   'description' => 'Alter StopWords used while parsing',
   'page callback' => 'drupal_get_form',
@@ -471,12 +481,12 @@ function mltag_menu() {
   'access arguments' => array('administer site configuration'),
   );
   */
-  $items['admin/config/mltag/train'] = array(
+  $items['admin/settings/mltag/train'] = array(
     'title' => 'MLTag Train Model',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('mltag_configure_train_confirm'),
     'access arguments' => array('administer site configuration'),
-    'type' => MENU_CALLBACK,
+    'type' => MENU_NORMAL_ITEM,
   );
   return $items;
 }
@@ -485,9 +495,9 @@ function mltag_menu() {
  * Implements mltag general settings form().
  */
 function mltag_general_settings() {
-  $result = db_query("select date_created from {mltag_learn_tags} order by date_created desc");
-  $record = $result->fetchObject();
-  $num_rows = $result->rowCount();
+  $result = db_query("select MAX(date_created) from {mltag_learn_tags}");
+  $record = db_fetch_object($result);
+
   $form['algo_type'] = array(
     '#type' => 'select',
     '#default_value' => variable_get('algo_type', 2),
@@ -521,7 +531,7 @@ function mltag_general_settings() {
   );
   $status = '<br />You can press this button to Train the model on your exisiting website content.';
   $status .= ' Training may take some time depending on the amount of website content.';
-  if ($num_rows > 0) {
+  if ($record) {
     $status .= ' <br /><u><b>Status</u> :</b> Model was last trained/updated on: <b>' . $record->date_created . '</b> </p>';
   }
   else {
@@ -530,10 +540,10 @@ function mltag_general_settings() {
   $form['mytextcontainer']['status'] = array(
     '#markup' => t($status),
   );
-  $form['mytextcontainer']['unpublished'] = array(
+  $form['mytextcontainer']['mltag_unpublished'] = array(
     '#type' => 'checkbox',
     '#title' => t('Use Unpublished Data for Training'),
-    '#default_value' => variable_get('unpublished', TRUE),
+    '#default_value' => variable_get('mltag_unpublished', TRUE),
     '#description' => t('Check this option to train the model using both Published & Unpublished content. Unchecking this option trains the model only on Published content.'),
   );
 
@@ -562,7 +572,7 @@ function mltag_general_settings() {
     );
   }
 
-  $node_types = node_type_get_types();
+  $node_types = node_get_types();
   foreach ($node_types as $node_type) {
     $types[$node_type->type] = $node_type->name;
   }
@@ -668,6 +678,7 @@ function mltag_train() {
     drupal_set_message(t('Error : Since there is no pre-existing content on this website, therefore, the model can not be trained.<br /> Please add some content to the website and try again.'), 'error');
     return;
   }
+
   // This selects the tags specified explicitly by the user for each node.
   $query1 = db_select('taxonomy_index', 't');
   $query1
@@ -735,6 +746,7 @@ function mltag_train() {
    * divided by standard deviation of criterion.
    */
 function mltag_rank_terms($tags_learned) {
+  @set_time_limit(180);
   $count = 0;
   $tags_learned_array = array();
   foreach ($tags_learned as $nid => $array) {
@@ -763,6 +775,7 @@ function mltag_rank_terms($tags_learned) {
 function mltag_sd_square($x, $mean) {
   return pow($x - $mean, 2);
 }
+
 /**
  * Function to calculate standard deviation (uses sd_square).
  */
@@ -770,6 +783,7 @@ function mltag_sd($array) {
   // Square root of sum of squares devided by N-1.
   return sqrt(array_sum(array_map("mltag_sd_square", $array, array_fill(0, count($array), (array_sum($array) / count($array))))) / (count($array) - 1));
 }
+
 /**
  * Function to merge trained vocabulary arrays.
  *
@@ -819,6 +833,7 @@ function mltag_stopwords_settings() {
   );
   return system_settings_form($form);
 }
+
 /**
  * Custom Hook- Under development.
  */
